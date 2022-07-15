@@ -1,0 +1,58 @@
+phy disable00000000
+bus reset00000000
+Get device desc, %d
+00000012
+Prepare Ctrl In %d
+00000012
+Get descriptor
+
+setup pack00000000
+Ctrl In done.
+
+ctrl in00000000
+Ctrl Out Ack %d
+00000000
+ctrl out00000000
+bus reset00000000
+Get device desc, %d
+00000012
+Prepare Ctrl In %d
+00000012
+Get descriptor
+
+setup pack00000000
+Ctrl In done.
+
+ctrl in00000000
+Ctrl Out Ack %d
+00000000
+ctrl out00000000
+bus reset00000000
+Get device desc, %d
+00000012
+Prepare Ctrl In %d
+00000012
+Get descriptor
+
+setup pack00000000
+Ctrl In done.
+
+ctrl in00000000
+Ctrl Out Ack %d
+00000000
+ctrl out00000000
+bus reset00000000
+Get device desc, %d
+00000012
+Prepare Ctrl In %d
+00000012
+Get descriptor
+
+setup pack00000000
+Ctrl In done.
+
+ctrl in00000000
+Ctrl Out Ack %d
+00000000
+ctrl out00000000
+phy disable00000000

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "c",
+            "includePath": [
+                "${workspaceFolder}/libs/CMSIS/Include",
+                "${workspaceFolder}/libs/Device/Nuvoton/NUC123/Include",
+                "${workspaceFolder}/libs/StdDriver/inc",
+                "${workspaceFolder}/libs/rtt",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/app"
+            ],
+            "defines": [
+            ],
+            "compilerPath": "E:/__gcc/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "c99",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}
