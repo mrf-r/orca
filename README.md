@@ -1,4 +1,4 @@
-# BUILD
+# this description is from another project
 
  - install build-essential / cygwin (for make)
  - install gcc-arm-none-eabi
