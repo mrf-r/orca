@@ -81,11 +81,11 @@ int main()
 {
     // usbflasher_start();
 
-    tim0_start_sr();
-    lcd_start();
-    led_init();
-    adc_start();
-    midi_start();
+    // tim0_start_sr();
+    // lcd_start();
+    // led_init();
+    // adc_start();
+    // midi_start();
 
     // rtt in systeminit.c
     // SEGGER_RTT_Init();

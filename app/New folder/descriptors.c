@@ -1,11 +1,9 @@
 /******************************************************************************
  * @file     descriptors.c
- * @brief    M451 series USBD driver source file
- * @version  1.0.0
- * @date     May, 2014
+ * @brief    NUC123 series USBD driver source file
  *
  * @note
- * Copyright (C) 2014 Nuvoton Technology Corp. All rights reserved.
+ * Copyright (C) 2014~2015 Nuvoton Technology Corp. All rights reserved.
  ******************************************************************************/
 /*!<Includes */
 #include "NUC123.h"
@@ -30,9 +28,8 @@ const uint8_t gu8DeviceDescriptor[] =
     (USBD_PID & 0xFF00) >> 8,
     0x00, 0x00,     /* bcdDevice */
     0x01,           /* iManufacture */
-    0x00,           /* iProduct */
-    0x00,           /* iSerialNumber
-                       NOTE: The serial number must be different between each MassStorage device. */
+    0x02,           /* iProduct */
+    0x03,           /* iSerialNumber - no serial */
     0x01            /* bNumConfigurations */
 };
 
@@ -92,11 +89,28 @@ const uint8_t gu8VendorStringDesc[16] =
     'N', 0, 'u', 0, 'v', 0, 'o', 0, 't', 0, 'o', 0, 'n', 0
 };
 
+/*!<USB Product String Descriptor */
+const uint8_t gu8ProductStringDesc[22] =
+{
+    22,             /* bLength          */
+    DESC_STRING,    /* bDescriptorType  */
+    'U', 0, 'S', 0, 'B', 0, ' ', 0, 'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0
+};
 
-const uint8_t *gpu8UsbString[2] =
+
+uint8_t gu8StringSerial[26] =
+{
+    26,             // bLength
+    DESC_STRING,    // bDescriptorType
+    'A', 0, '0', 0, '0', 0, '0', 0, '0', 0, '8', 0, '0', 0, '4', 0, '0', 0, '1', 0, '1', 0, '5', 0
+};
+
+const uint8_t *gpu8UsbString[4] =
 {
     gu8StringLang,
-    gu8VendorStringDesc
+    gu8VendorStringDesc,
+    gu8ProductStringDesc,
+    gu8StringSerial
 };
 
 const S_USBD_INFO_T gsInfo =
@@ -104,5 +118,6 @@ const S_USBD_INFO_T gsInfo =
     gu8DeviceDescriptor,
     gu8ConfigDescriptor,
     gpu8UsbString,
+    NULL
 };
 

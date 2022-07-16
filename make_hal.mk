@@ -16,7 +16,9 @@ $(DIR_SRC_APP) \
 #end
 
 #SOURCES_HAL_C := $(wildcard $(DIR_SRC_HAL)/*.c)
-SOURCES_HAL_C := $(DIR_SRC_HAL)/usbd.c
+#SOURCES_HAL_C := $(DIR_SRC_HAL)/usbd.c
+#SOURCES_HAL_C += $(DIR_SRC_HAL)/clk.c
+SOURCES_HAL_C := 
 SOURCES_HAL_C += $(wildcard $(DIR_SRC_APP)/*.c)
 
 #######################################
