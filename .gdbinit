@@ -19,7 +19,8 @@ source .gdbremote
 # TODO: lma instead of __Vectors!!!!
 define reload
     monitor reset halt
-    file obj/ORCA_FW.elf
+    #file obj/ORCA_FW.elf
+    file obj/ORCA_BOOT.elf
     load
     set $sp=__StackTop
     tb main
