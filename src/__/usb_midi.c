@@ -48,8 +48,7 @@ void prlw(char* str, ...)
     }
     SEGGER_RTT_Write(0, str, strlen);
     va_start(ap, str); /* Requires the last fixed parameter (to get the address) */
-    while (count--)
-    {
+    while (count--) {
         SEGGER_RTT_Write(0, toh32(va_arg(ap, int)), 9);
     }
     va_end(ap);
@@ -65,7 +64,7 @@ void pr_setup_packet()
     SEGGER_RTT_Write(0, "\n", 1);
 }
 
-#define pr(str)  SEGGER_RTT_Write(0, str, sizeof(str) - 1)
+#define pr(str) SEGGER_RTT_Write(0, str, sizeof(str) - 1)
 
 /*--------------------------------------------------------------------------*/
 void USBD_IRQHandler_(void)
@@ -289,10 +288,12 @@ void EP3_Handler(void)
 
 void usb_midi_tap()
 {
-    if (USBD->INTSTS) {
-        //pr("interrupt ", USBD->INTSTS)
-            USBD_IRQHandler_();
+    if (NVIC_GetPendingIRQ(USBD_IRQn)) {
+        NVIC_ClearPendingIRQ(USBD_IRQn);
+        pr("+");
     }
+    USBD_IRQHandler_();
+    return;
 
     // in check
     if (usb_midi_in_endpoint_unprocessed) {

@@ -14,7 +14,7 @@ clean:
 
 all:
 	@$(MAKE) --no-print-directory clean
-	@$(MAKE) --no-print-directory boot
+	@$(MAKE) --no-print-directory firmware
 #@$(MAKE) --no-print-directory boot firmware
 #######################################
 # bootloader

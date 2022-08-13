@@ -49,14 +49,10 @@ void mainloop()
         next_upd += 48000;
     }
     midi_test_check();
-    
-    usb_midi_tap();
-
 
     timeslot = timer_get_value();
     if (timeslot > timeslot_max)
         timeslot_max = timeslot;
-
 
     // uint32_t lp = sr_counter & 0x7;
     // led_set(lp, hsv2c(adc_knob[lp] / 4, adc_modwheel / 32, adc_pitchwheel / 32));
@@ -76,12 +72,41 @@ void mainloop()
 }
 
 volatile uint32_t readcfg;
+/*
+#define	USB_STATE_DETACHED			0x00
+#define	USB_STATE_ATTACHED			0x01
+#define	USB_STATE_DEFAULT			0x11
+#define	USB_STATE_ADDRESS			0x31
+#define	USB_STATE_CONFIGURED		0x71
+volatile uint8_t usb_state = USB_STATE_DETACHED;
+void UsbFdt(void)
+{
+	uint8_t u8FLDET = USBD->FLDET.FLDET;
+	_DRVUSB_SET_EVENT_FLAG(INTSTS_FLDET);
+    if (u8FLDET)
+	{
+		if (g_u8UsbState & USB_STATE_ATTACHED)
+		{
+			return;
+		}
+		g_u8UsbState = USB_STATE_ATTACHED;
+		UsbCfg();
+        _DRVUSB_ENABLE_USB();
+	}
+	else
+	{
+		g_u8UsbState = USB_STATE_DETACHED;
+		udcOnLine = 0;
+        _DRVUSB_DISABLE_USB();
+	}
+}
+*/
 
 int main()
 {
     // usbflasher_start();
 
-    // tim0_start_sr();
+    tim0_start_sr();
     // lcd_start();
     // led_init();
     // adc_start();
@@ -91,22 +116,29 @@ int main()
     // SEGGER_RTT_Init();
     // SEGGER_RTT_Write(0, "hello!\n", 7);
 
-
-    usbflasher_start();
-    /*
     USBD_SET_SE0();
     for (int i = 0; i < 12000; i++)
         wait_next_48k_tick();
 
     // Open USB controller
     USBD_Open(&usb_descriptors, NULL, NULL);
+    /*
+    USBD->ATTR = 0x7D0;
+    USBD_SET_SE0();
+    USBD_CLR_INT_FLAG(USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET | USBD_INT_WAKEUP);
+    USBD_ENABLE_INT(USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET | USBD_INT_WAKEUP);
+    _DRVUSB_TRIG_EP(1, 0x08);
+    */
+
 
     // Endpoint configuration
     midi_endpoints_init();
     // Start USB device
     USBD_Start();
-    */
-
+    USBD->EP[1].MXPLD = 0x10; //??
+    while (1)
+        usb_midi_tap();
+    return 0;
 
     // NVIC_EnableIRQ(USBD_IRQn);
     // NVIC_EnableIRQ(UART_IRQn);
@@ -124,7 +156,7 @@ int main()
     // led_set(25, rgb2c(8, 0, 0));
 
     while (1)
-        ;//mainloop();
+        ; // mainloop();
 
     while (!(SYS->REGWRPROT & 0x1))
         ;

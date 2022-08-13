@@ -19,14 +19,14 @@ source .gdbremote
 # TODO: lma instead of __Vectors!!!!
 define reload
     monitor reset halt
-    #file obj/ORCA_FW.elf
-    file obj/ORCA_BOOT.elf
+    file obj/ORCA_FW.elf
+    #file obj/ORCA_BOOT.elf
     load
     set $sp=__StackTop
     tb main
     continue
-    monitor rtt setup 0x20000000 65536 "SEGGER RTT"
-    monitor rtt start
+    #monitor rtt setup 0x20000000 65536 "SEGGER RTT"
+    #monitor rtt start
     end
 
 reload

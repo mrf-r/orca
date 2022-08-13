@@ -13,7 +13,7 @@
 #include <string.h>
 #include "NUC123.h"
 
-#if 0
+#if 1
 void prlw(char* str, ...);
 #define DBG_PRINTF      prlw
 #else
