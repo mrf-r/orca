@@ -92,32 +92,32 @@ int32_t main(void)
   
 	volatile uint32_t u32INTSTS, temp;
 
-	UNLOCKREG();
+// 	UNLOCKREG();
 
-	update_flash();
+// 	update_flash();
 
-	if ((inp32(SWITCH_PORT) & SWITCH_PIN) != 0)	 {
-		goto MSDISP;
-	}
+// 	if ((inp32(SWITCH_PORT) & SWITCH_PIN) != 0)	 {
+// 		goto MSDISP;
+// 	}
 
-	FMC->ISPCON.BS = 0;  
-	outp32(&SYS->IPRSTC1, 0x02);
-	while(1);
+// 	FMC->ISPCON.BS = 0;  
+// 	outp32(&SYS->IPRSTC1, 0x02);
+// 	while(1);
 
-MSDISP:				
-    /* Enable internal osc */
-	outp32(&SYSCLK->PWRCON,0x1C);
-    RoughDelay(0x4000);                     
+// MSDISP:				
+//     /* Enable internal osc */
+// 	outp32(&SYSCLK->PWRCON,0x1C);
+//     RoughDelay(0x4000);                     
 
-    /* Enable PLL */
-	outp32(&SYSCLK->AHBCLK,0x04);
-	outp32(&SYSCLK->CLKDIV,0x21);
-	outp32(&SYSCLK->PLLCON,0x00080418);
-	RoughDelay(0x4000);
+//     /* Enable PLL */
+// 	outp32(&SYSCLK->AHBCLK,0x04);
+// 	outp32(&SYSCLK->CLKDIV,0x21);
+// 	outp32(&SYSCLK->PLLCON,0x00080418);
+// 	RoughDelay(0x4000);
 
-	/* Switch HCLK source to PLL */
-	outp32(&SYSCLK->CLKSEL0,0x3A);
-    RoughDelay(0x4000);                     
+// 	/* Switch HCLK source to PLL */
+// 	outp32(&SYSCLK->CLKSEL0,0x3A);
+//     RoughDelay(0x4000);                     
 
     
     /* Initialize USB Device function */

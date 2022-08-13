@@ -12,7 +12,7 @@ DIRS_INCLUDE_FW := $(DIR_SRC) $(DIRS_INCLUDE_HAL) $(DIRS_INCLUDE_CLI)
 
 SOURCES_ASM_FW := $(wildcard $(DIR_SRC)/*$(EXT_ASM))
 SOURCES_C_FW := $(wildcard $(DIR_SRC)/*.c)
-SOURCES_C_FW := $(filter-out $(DIR_SRC)/systeminit.c, $(SOURCES_C_FW))
+# SOURCES_C_FW := $(filter-out $(DIR_SRC)/systeminit.c, $(SOURCES_C_FW))
 
 TARGET_FW := ORCA_FW
 
