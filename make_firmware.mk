@@ -20,7 +20,7 @@ ELF_FW := $(DIR_OBJ)/$(TARGET_FW).elf
 BIN_FW := $(DIR_OBJ)/$(TARGET_FW).BIN
 HEX_FW := $(DIR_OBJ)/$(TARGET_FW).hex
 
-#LDSCRIPT_FW := $(DIR_SRC)/orca_aprom.ld
+# LDSCRIPT_FW := $(DIR_SRC)/orca_aprom.ld
 LDSCRIPT_FW := $(DIR_SRC)/orca_ram.ld
 
 #######################################

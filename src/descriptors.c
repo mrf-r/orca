@@ -1,6 +1,6 @@
 /******************************************************************************
  * @file     descriptors.c
- * @brief    USBD descriptors
+ * @brief    NUC123 series USBD descriptor
  *
  * @note
  * Copyright (C) 2014~2015 Nuvoton Technology Corp. All rights reserved.
@@ -10,7 +10,48 @@
 
 /*!<Includes */
 #include "NUC123.h"
-#include "cdc_serial.h"
+#include "usbd.h"
+#include "hid_kb.h"
+
+/*!<USB HID Report Descriptor */
+const uint8_t HID_KeyboardReportDescriptor[] =
+{
+    0x05, 0x01,     /* Usage Page(Generic Desktop Controls) */
+    0x09, 0x06,     /* Usage(Keyboard) */
+    0xA1, 0x01,     /* Collection(Application) */
+    0x05, 0x07,         /* Usage Page(Keyboard/Keypad) */
+    0x19, 0xE0,         /* Usage Minimum(0xE0) */
+    0x29, 0xE7,         /* Usage Maximum(0xE7) */
+    0x15, 0x00,         /* Logical Minimum(0x0) */
+    0x25, 0x01,         /* Logical Maximum(0x1) */
+    0x75, 0x01,         /* Report Size(0x1) */
+    0x95, 0x08,         /* Report Count(0x8) */
+    0x81, 0x02,         /* Input (Data) => Modifier byte */
+    0x95, 0x01,         /* Report Count(0x1) */
+    0x75, 0x08,         /* Report Size(0x8) */
+    0x81, 0x01,         /* Input (Constant) => Reserved byte */
+    0x95, 0x05,         /* Report Count(0x5) */
+    0x75, 0x01,         /* Report Size(0x1) */
+    0x05, 0x08,         /* Usage Page(LEDs) */
+    0x19, 0x01,         /* Usage Minimum(0x1) */
+    0x29, 0x05,         /* Usage Maximum(0x5) */
+    0x91, 0x02,         /* Output (Data) => LED report */
+    0x95, 0x01,         /* Report Count(0x1) */
+    0x75, 0x03,         /* Report Size(0x3) */
+    0x91, 0x01,         /* Output (Constant) => LED report padding */
+    0x95, 0x06,         /* Report Count(0x6) */
+    0x75, 0x08,         /* Report Size(0x8) */
+    0x15, 0x00,         /* Logical Minimum(0x0) */
+    0x25, 0x65,         /* Logical Maximum(0x65) */
+    0x05, 0x07,         /* Usage Page(Keyboard/Keypad) */
+    0x19, 0x00,         /* Usage Minimum(0x0) */
+    0x29, 0x65,         /* Usage Maximum(0x65) */
+    0x81, 0x00,         /* Input (Data) */
+    0xC0,           /* End Collection */
+};
+
+
+
 
 /*----------------------------------------------------------------------------*/
 /*!<USB Device Descriptor */
@@ -19,7 +60,7 @@ const uint8_t gu8DeviceDescriptor[] =
     LEN_DEVICE,     /* bLength */
     DESC_DEVICE,    /* bDescriptorType */
     0x10, 0x01,     /* bcdUSB */
-    0x02,           /* bDeviceClass */
+    0x00,           /* bDeviceClass */
     0x00,           /* bDeviceSubClass */
     0x00,           /* bDeviceProtocol */
     EP0_MAX_PKT_SIZE,   /* bMaxPacketSize0 */
@@ -29,97 +70,58 @@ const uint8_t gu8DeviceDescriptor[] =
     /* idProduct */
     USBD_PID & 0x00FF,
     (USBD_PID & 0xFF00) >> 8,
-    0x00, 0x03,     /* bcdDevice */
+    0x00, 0x00,     /* bcdDevice */
     0x01,           /* iManufacture */
     0x02,           /* iProduct */
-    0x03,           /* iSerialNumber */
+    0x03,           /* iSerialNumber - no serial */
     0x01            /* bNumConfigurations */
 };
 
 /*!<USB Configure Descriptor */
 const uint8_t gu8ConfigDescriptor[] =
 {
-    LEN_CONFIG,     /* bLength              */
-    DESC_CONFIG,    /* bDescriptorType      */
-    0x43, 0x00,     /* wTotalLength         */
-    0x02,           /* bNumInterfaces       */
-    0x01,           /* bConfigurationValue  */
-    0x00,           /* iConfiguration       */
-    0xC0,           /* bmAttributes         */
-    0x32,           /* MaxPower             */
+    LEN_CONFIG,     /* bLength */
+    DESC_CONFIG,    /* bDescriptorType */
+    /* wTotalLength */
+    LEN_CONFIG_AND_SUBORDINATE & 0x00FF,
+    (LEN_CONFIG_AND_SUBORDINATE & 0xFF00) >> 8,
+    0x01,           /* bNumInterfaces */
+    0x01,           /* bConfigurationValue */
+    0x00,           /* iConfiguration */
+    0x80 | (USBD_SELF_POWERED << 6) | (USBD_REMOTE_WAKEUP << 5),/* bmAttributes */
+    USBD_MAX_POWER,         /* MaxPower */
 
-    /* INTERFACE descriptor */
-    LEN_INTERFACE,  /* bLength              */
-    DESC_INTERFACE, /* bDescriptorType      */
-    0x00,           /* bInterfaceNumber     */
-    0x00,           /* bAlternateSetting    */
-    0x01,           /* bNumEndpoints        */
-    0x02,           /* bInterfaceClass      */
-    0x02,           /* bInterfaceSubClass   */
-    0x01,           /* bInterfaceProtocol   */
-    0x00,           /* iInterface           */
+    /* I/F descr: HID */
+    LEN_INTERFACE,  /* bLength */
+    DESC_INTERFACE, /* bDescriptorType */
+    0x00,           /* bInterfaceNumber */
+    0x00,           /* bAlternateSetting */
+    0x01,           /* bNumEndpoints */
+    0x03,           /* bInterfaceClass */
+    0x01,           /* bInterfaceSubClass */
+    HID_KEYBOARD,   /* bInterfaceProtocol */
+    0x00,           /* iInterface */
 
-    /* Communication Class Specified INTERFACE descriptor */
-    0x05,           /* Size of the descriptor, in bytes */
-    0x24,           /* CS_INTERFACE descriptor type */
-    0x00,           /* Header functional descriptor subtype */
-    0x10, 0x01,     /* Communication device compliant to the communication spec. ver. 1.10 */
+    /* HID Descriptor */
+    LEN_HID,        /* Size of this descriptor in UINT8s. */
+    DESC_HID,       /* HID descriptor type. */
+    0x10, 0x01,     /* HID Class Spec. release number. */
+    0x00,           /* H/W target country. */
+    0x01,           /* Number of HID class descriptors to follow. */
+    DESC_HID_RPT,   /* Descriptor type. */
+    /* Total length of report descriptor. */
+    sizeof(HID_KeyboardReportDescriptor) & 0x00FF,
+    (sizeof(HID_KeyboardReportDescriptor) & 0xFF00) >> 8,
 
-    /* Communication Class Specified INTERFACE descriptor */
-    0x05,           /* Size of the descriptor, in bytes */
-    0x24,           /* CS_INTERFACE descriptor type */
-    0x01,           /* Call management functional descriptor */
-    0x00,           /* BIT0: Whether device handle call management itself. */
-    /* BIT1: Whether device can send/receive call management information over a Data Class Interface 0 */
-    0x01,           /* Interface number of data class interface optionally used for call management */
-
-    /* Communication Class Specified INTERFACE descriptor */
-    0x04,           /* Size of the descriptor, in bytes */
-    0x24,           /* CS_INTERFACE descriptor type */
-    0x02,           /* Abstract control management functional descriptor subtype */
-    0x00,           /* bmCapabilities       */
-
-    /* Communication Class Specified INTERFACE descriptor */
-    0x05,           /* bLength              */
-    0x24,           /* bDescriptorType: CS_INTERFACE descriptor type */
-    0x06,           /* bDescriptorSubType   */
-    0x00,           /* bMasterInterface     */
-    0x01,           /* bSlaveInterface0     */
-
-    /* ENDPOINT descriptor */
-    LEN_ENDPOINT,                   /* bLength          */
-    DESC_ENDPOINT,                  /* bDescriptorType  */
-    (EP_INPUT | INT_IN_EP_NUM),     /* bEndpointAddress */
-    EP_INT,                         /* bmAttributes     */
-    EP4_MAX_PKT_SIZE, 0x00,         /* wMaxPacketSize   */
-    0x01,                           /* bInterval        */
-
-    /* INTERFACE descriptor */
-    LEN_INTERFACE,  /* bLength              */
-    DESC_INTERFACE, /* bDescriptorType      */
-    0x01,           /* bInterfaceNumber     */
-    0x00,           /* bAlternateSetting    */
-    0x02,           /* bNumEndpoints        */
-    0x0A,           /* bInterfaceClass      */
-    0x00,           /* bInterfaceSubClass   */
-    0x00,           /* bInterfaceProtocol   */
-    0x00,           /* iInterface           */
-
-    /* ENDPOINT descriptor */
-    LEN_ENDPOINT,                   /* bLength          */
-    DESC_ENDPOINT,                  /* bDescriptorType  */
-    (EP_INPUT | BULK_IN_EP_NUM),    /* bEndpointAddress */
-    EP_BULK,                        /* bmAttributes     */
-    EP2_MAX_PKT_SIZE, 0x00,         /* wMaxPacketSize   */
-    0x00,                           /* bInterval        */
-
-    /* ENDPOINT descriptor */
-    LEN_ENDPOINT,                   /* bLength          */
-    DESC_ENDPOINT,                  /* bDescriptorType  */
-    (EP_OUTPUT | BULK_OUT_EP_NUM),  /* bEndpointAddress */
-    EP_BULK,                        /* bmAttributes     */
-    EP3_MAX_PKT_SIZE, 0x00,         /* wMaxPacketSize   */
-    0x00                            /* bInterval        */
+    /* EP Descriptor: interrupt in. */
+    LEN_ENDPOINT,   /* bLength */
+    DESC_ENDPOINT,  /* bDescriptorType */
+    (INT_IN_EP_NUM | EP_INPUT), /* bEndpointAddress */
+    EP_INT,         /* bmAttributes */
+    /* wMaxPacketSize */
+    EP2_MAX_PKT_SIZE & 0x00FF,
+    (EP2_MAX_PKT_SIZE & 0xFF00) >> 8,
+    HID_DEFAULT_INT_IN_INTERVAL     /* bInterval */
 };
 
 /*!<USB Language String Descriptor */
@@ -141,16 +143,17 @@ const uint8_t gu8VendorStringDesc[] =
 /*!<USB Product String Descriptor */
 const uint8_t gu8ProductStringDesc[] =
 {
-    32,             /* bLength          */
-    DESC_STRING,    /* bDescriptorType  */
-    'U', 0, 'S', 0, 'B', 0, ' ', 0, 'V', 0, 'i', 0, 'r', 0, 't', 0, 'u', 0, 'a', 0, 'l', 0, ' ', 0, 'C', 0, 'O', 0, 'M', 0
+    26,
+    DESC_STRING,
+    'H', 0, 'I', 0, 'D', 0, ' ', 0, 'K', 0, 'e', 0, 'y', 0, 'b', 0, 'o', 0, 'a', 0, 'r', 0, 'd', 0
 };
+
 
 const uint8_t gu8StringSerial[26] =
 {
     26,             // bLength
     DESC_STRING,    // bDescriptorType
-    'A', 0, '0', 0, '2', 0, '0', 0, '1', 0, '4', 0, '0', 0, '9', 0, '0', 0, '3', 0, '0', 0, '5', 0
+    'A', 0, '0', 0, '2', 0, '0', 0, '1', 0, '4', 0, '0', 0, '9', 0, '0', 0, '3', 0, '0', 0, '2', 0
 };
 
 const uint8_t *gpu8UsbString[4] =
@@ -161,12 +164,36 @@ const uint8_t *gpu8UsbString[4] =
     gu8StringSerial
 };
 
+const uint8_t *gpu8UsbHidReport[3] =
+{
+    HID_KeyboardReportDescriptor,
+    NULL,
+    NULL
+};
+
+const uint32_t gu32UsbHidReportLen[3] =
+{
+    sizeof(HID_KeyboardReportDescriptor),
+    0,
+    0
+};
+
+const uint32_t gu32ConfigHidDescIdx[3] =
+{
+    (LEN_CONFIG+LEN_INTERFACE),
+    0,
+    0
+};
+
 const S_USBD_INFO_T gsInfo =
 {
     gu8DeviceDescriptor,
     gu8ConfigDescriptor,
     gpu8UsbString,
-    NULL
+    gpu8UsbHidReport,
+    gu32UsbHidReportLen,
+    gu32ConfigHidDescIdx
 };
+
 
 #endif  /* __DESCRIPTORS_C__ */

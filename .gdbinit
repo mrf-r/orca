@@ -29,5 +29,5 @@ define reload
     #monitor rtt start
     end
 
-reload
+# reload
 

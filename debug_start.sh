@@ -10,7 +10,7 @@ echo target extended-remote $IP:3333 > .gdbremote
 cmd.exe /c start /min cmd.exe /c e:/__gcc/xpack-openocd-0.11.0-3/bin/openocd.exe -f openocd-orca.cfg
 # swo and rtt
 # cmd.exe /c start e:/__gcc/putty/PUTTY.exe -telnet -P 3456 $IP
-cmd.exe /c start e:/__gcc/putty/PUTTY.exe -telnet -P 5678 $IP
+# cmd.exe /c start e:/__gcc/putty/PUTTY.exe -telnet -P 5678 $IP
 gdb-multiarch
 
 #cat /etc/resolv.conf | grep nameserver | awk '{gsub("nameserver","bindto")}1' > bindto.cfg
