@@ -11,13 +11,13 @@ CP := '$(GCC_PATH)/arm-none-eabi-objcopy'
 SZ := '$(GCC_PATH)/arm-none-eabi-size'
 
 ifndef BUILD_TAG
-BUILD_TAG := make_loc
+BUILD_TAG := loc_undef
 endif
 
 #######################################
 DIR_SRC := src
-BUILD_ID := $(DIR_SRC)/build_signature.h
 DIR_OBJ := obj
+BUILD_ID := $(DIR_OBJ)/build_signature.h
 
 #######################################
 FLAGS_MCU := -mcpu=cortex-m0 -mthumb
@@ -54,11 +54,11 @@ FLAGS_LD_COMMON += -Xlinker --print-memory-usage
 #FLAGS_LD_COMMON += -flto
 
 #######################################
-#.BUILD_SIGN:
-#
-#$(BUILD_ID): .BUILD_SIGN
-#	@bash build_signature.sh $@ $(BUILD_TAG)
-#
+.BUILD_SIGN:
+
+$(BUILD_ID): .BUILD_SIGN | $(DIR_OBJ)
+	@bash build_signature.sh $@ $(BUILD_TAG)
+
 
 
 

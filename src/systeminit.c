@@ -128,6 +128,6 @@ void SystemInit()
         *ram++ = 0;
     }
 
-    // SEGGER_RTT_Init();
-    // SEGGER_RTT_Write(0, "rtt start\n", 10);
+    SEGGER_RTT_Init();
+    SEGGER_RTT_Write(0, "rtt start\n", 10);
 }

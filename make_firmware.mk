@@ -57,7 +57,7 @@ $(OBJECTS_FW): make_firmware.mk make_common.mk
 include $(wildcard $(DIR_OBJ_FW)/*.d)
 
 #######################################
-$(ELF_FW): $(OBJECTS_FW) $(OBJECTS_HAL) #$(OBJECTS_CLI)
+$(ELF_FW): $(OBJECTS_FW) $(OBJECTS_HAL) $(OBJECTS_CLI)
 	@echo "FW elf: $(notdir $@)"
 	@$(CC) $(FLAGS_LD_FW) $^ -o $@
 	@$(SZ) $@

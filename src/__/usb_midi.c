@@ -7,67 +7,8 @@
 void EP2_Handler(void);
 void EP3_Handler(void);
 
-#include "SEGGER_RTT.h"
-#include "stdarg.h"
-
-static char val_buffer[9];
-static char tohs[17] = "0123456789ABCDEF";
-static char* toh32(uint32_t val)
-{
-    val_buffer[0] = tohs[(val >> 28) & 0xF];
-    val_buffer[1] = tohs[(val >> 24) & 0xF];
-    val_buffer[2] = tohs[(val >> 20) & 0xF];
-    val_buffer[3] = tohs[(val >> 16) & 0xF];
-    val_buffer[4] = tohs[(val >> 12) & 0xF];
-    val_buffer[5] = tohs[(val >> 8) & 0xF];
-    val_buffer[6] = tohs[(val >> 4) & 0xF];
-    val_buffer[7] = tohs[(val)&0xF];
-    val_buffer[8] = ' ';
-    return val_buffer;
-}
-
-static char* toh8(uint8_t val)
-{
-    val_buffer[0] = tohs[(val >> 4) & 0xF];
-    val_buffer[1] = tohs[(val)&0xF];
-    val_buffer[2] = ' ';
-    return val_buffer;
-}
-
-void prlw(char* str, ...)
-{
-    va_list ap;
-    uint32_t strlen = 0;
-    uint32_t count = 0;
-    char* sl = str;
-    while (*sl) {
-        if (*sl == '%')
-            count++;
-        strlen++;
-        sl++;
-    }
-    SEGGER_RTT_Write(0, str, strlen);
-    va_start(ap, str); /* Requires the last fixed parameter (to get the address) */
-    while (count--) {
-        SEGGER_RTT_Write(0, toh32(va_arg(ap, int)), 9);
-    }
-    va_end(ap);
-    SEGGER_RTT_Write(0, "\n", 1);
-}
-
-extern uint8_t g_usbd_SetupPacket[8];
-void pr_setup_packet()
-{
-    for (int i = 0; i < 8; i++) {
-        SEGGER_RTT_Write(0, toh8(g_usbd_SetupPacket[i]), 3);
-    }
-    SEGGER_RTT_Write(0, "\n", 1);
-}
-
-#define pr(str) SEGGER_RTT_Write(0, str, sizeof(str) - 1)
-
 /*--------------------------------------------------------------------------*/
-void USBD_IRQHandler_(void)
+void USBD_IRQHandler(void)
 {
     uint32_t u32IntSts = USBD_GET_INT_FLAG();
     uint32_t u32State = USBD_GET_BUS_STATE();

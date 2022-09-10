@@ -7,14 +7,15 @@
  * Copyright (C) 2014~2015 Nuvoton Technology Corp. All rights reserved.
  ******************************************************************************/
 // #include <stdio.h>
-#define printf(...)
+void print_s(const char* s);
+#define printf(s) print_s(s)
+// #define printf(...)
 #include "NUC123.h"
 #include "hid_kb.h"
 
 /*--------------------------------------------------------------------------*/
 uint8_t volatile g_u8EP2Ready = 0;
 int IsDebugFifoEmpty(void);
-
 
 void SYS_Init(void)
 {
@@ -53,7 +54,6 @@ void SYS_Init(void)
     CLK_SetModuleClock(UART0_MODULE, CLK_CLKSEL1_UART_S_HXT, CLK_CLKDIV_UART(1));
     CLK_SetModuleClock(USBD_MODULE, 0, CLK_CLKDIV_USB(3));
 
-
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init I/O Multi-function                                                                                 */
     /*---------------------------------------------------------------------------------------------------------*/
@@ -71,14 +71,13 @@ void SYS_Init(void)
     CLK_EnableCKO(CLK_CLKSEL2_FRQDIV_S_HCLK, 2, (uint32_t)NULL);
 }
 
-
 void UART0_Init(void)
 {
     /*---------------------------------------------------------------------------------------------------------*/
     /* Init UART                                                                                               */
     /*---------------------------------------------------------------------------------------------------------*/
     /* Reset IP */
-    SYS->IPRSTC2 |=  SYS_IPRSTC2_UART0_RST_Msk;
+    SYS->IPRSTC2 |= SYS_IPRSTC2_UART0_RST_Msk;
     SYS->IPRSTC2 &= ~SYS_IPRSTC2_UART0_RST_Msk;
 
     /* Configure UART0 and set UART0 Baudrate */
@@ -86,36 +85,29 @@ void UART0_Init(void)
     UART0->LCR = UART_WORD_LEN_8 | UART_PARITY_NONE | UART_STOP_BIT_1;
 }
 
-
 void HID_UpdateKbData(void)
 {
     int32_t i;
-    uint8_t *buf;
+    uint8_t* buf;
     uint32_t key = 0xF;
     static uint32_t preKey;
 
-    if(g_u8EP2Ready)
-    {
-        buf = (uint8_t *)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2));
+    if (g_u8EP2Ready) {
+        buf = (uint8_t*)(USBD_BUF_BASE + USBD_GET_EP_BUF_ADDR(EP2));
 
         /* If PB.15 = 0, just report it is key 'a' */
         key = (PB->PIN & (1 << 15)) ? 0 : 1;
 
-        if(key == 0)
-        {
-            for(i = 0; i < 8; i++)
-            {
+        if (key == 0) {
+            for (i = 0; i < 8; i++) {
                 buf[i] = 0;
             }
 
-            if(key != preKey)
-            {
+            if (key != preKey) {
                 /* Trigger to note key release */
                 USBD_SET_PAYLOAD_LEN(EP2, 8);
             }
-        }
-        else
-        {
+        } else {
             preKey = key;
             buf[2] = 0x04; /* Key A */
             USBD_SET_PAYLOAD_LEN(EP2, 8);
@@ -137,7 +129,7 @@ void PowerDown()
     CLK_PowerDown();
 
     /* Clear PWR_DOWN_EN if it is not clear by itself */
-    if(CLK->PWRCON & CLK_PWRCON_PWR_DOWN_EN_Msk)
+    if (CLK->PWRCON & CLK_PWRCON_PWR_DOWN_EN_Msk)
         CLK->PWRCON ^= CLK_PWRCON_PWR_DOWN_EN_Msk;
 
     printf("device wakeup!\n");
@@ -173,20 +165,18 @@ int32_t main(void)
     /* start to IN data */
     g_u8EP2Ready = 1;
 
-    while(1)
-    {
+    while (1) {
         /* Enter power down when USB suspend */
-        if(g_u8Suspend)
-            PowerDown();
+        // if(g_u8Suspend)
+        //     PowerDown();
 
         HID_UpdateKbData();
 
-        if (NVIC_GetPendingIRQ(USBD_IRQn))
-            USBD_IRQHandler();
+        USBD_IRQHandler();
+        // if (NVIC_GetPendingIRQ(USBD_IRQn)) {
+        //     NVIC_ClearPendingIRQ(USBD_IRQn);
+        // }
     }
 }
 
-
-
 /*** (C) COPYRIGHT 2014~2015 Nuvoton Technology Corp. ***/
-

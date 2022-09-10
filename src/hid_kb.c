@@ -12,6 +12,10 @@
 #include "usbd.h"
 #include "hid_kb.h"
 
+
+void print_s(const char* s);
+void print_d32(const unsigned s);
+
 uint8_t volatile g_u8Suspend = 0;
 uint8_t g_u8Idle = 0, g_u8Protocol = 0;
 
@@ -19,6 +23,13 @@ void USBD_IRQHandler(void)
 {
     uint32_t u32IntSts = USBD_GET_INT_FLAG();
     uint32_t u32State = USBD_GET_BUS_STATE();
+
+    if (!u32IntSts) return;
+
+    print_s("\n > ints: 0x");
+    print_d32(u32IntSts);
+    print_s(" bus state: 0x");
+    print_d32(u32State);
 
 //------------------------------------------------------------------
     if(u32IntSts & USBD_INTSTS_FLDET)
