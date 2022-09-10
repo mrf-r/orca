@@ -117,6 +117,6 @@ void midi_test_check(void);
 void midi_start(void);
 
 //usb
-void usb_midi_tap(void);
+void usbmidiTap(void);
 
 #endif // ORCA_H_

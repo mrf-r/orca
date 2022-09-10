@@ -132,12 +132,12 @@ int main()
 
 
     // Endpoint configuration
-    midi_endpoints_init();
+    usbmidiEndpointsInit();
     // Start USB device
     USBD_Start();
     USBD->EP[1].MXPLD = 0x10; //??
     while (1)
-        usb_midi_tap();
+        usbmidiTap();
     return 0;
 
     // NVIC_EnableIRQ(USBD_IRQn);

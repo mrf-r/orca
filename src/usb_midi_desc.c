@@ -31,19 +31,19 @@ ALIGN4 const uint8_t usbdesc_device[] = {
     0x01 // bNumConfigurations
 };
 
-ALIGN4 const uint8_t usbdesc_langid[] = {
+ALIGN4 const uint8_t usbdesc_langid[4] = {
     0x04, 0x03, // String Descriptor
     0x09, 0x04 // wLANGID
 };
 
-ALIGN4 const uint8_t usbdesc_manufacturer[] = {
+ALIGN4 const uint8_t usbdesc_manufacturer[38] = {
     38, 3,
     'U', 0, 'R', 0, 'A', 0, 'L', 0, ' ', 0, 'S', 0, 'o', 0, 'u', 0,
     'n', 0, 'd', 0, ' ', 0, 'S', 0, 'o', 0, 'u', 0, 'r', 0, 'c', 0,
     'e', 0, 's', 0
 };
 
-ALIGN4 const uint8_t usbdesc_product[] = {
+ALIGN4 const uint8_t usbdesc_product[24] = {
     24, 3,
     'O', 0, 'r', 0, 'c', 0, 'a', 0, ' ', 0, 'm', 0, 'i', 0, 'n', 0,
     'i', 0, '2', 0, '5', 0
@@ -92,7 +92,7 @@ ALIGN4 const uint8_t usbdesc_conf[] = {
     0x07,
     0x24, // MS Interface Header Descriptor:
     0x01, // bDescriptorSubtype
-    0x00, 0x01, // bcdMSC
+    0x00, 0x01, // bcdADC
     0x41, 0x00, // wTotalLength
 
     0x06,
@@ -142,7 +142,7 @@ ALIGN4 const uint8_t usbdesc_conf[] = {
     0x25, // MS Bulk Data Endpoint Descriptor:
     0x01, // bDescriptorSubtype
     0x01, // bNumEmbMIDIJack
-    0x03, // baAssocJackID(1)
+    0x01, // baAssocJackID
 
     0x09,
     0x05, // Endpoint Descriptor (Audio/MIDI):
@@ -157,14 +157,10 @@ ALIGN4 const uint8_t usbdesc_conf[] = {
     0x25, // MS Bulk Data Endpoint Descriptor:
     0x01, // bDescriptorSubtype
     0x01, // bNumEmbMIDIJack
-    0x03, // baAssocJackID(1)
+    0x03, // baAssocJackID
 };
 
-// const uint16_t usbdesc_device_size = sizeof(usbdesc_device);
-// const uint16_t usbdesc_conf_size = sizeof(usbdesc_conf);
-// const uint16_t usbdesc_string_size = sizeof(usbdesc_string);
-
-const uint8_t* usbdesc_str[] = {
+const uint8_t* usbdesc_str[4] = {
     usbdesc_langid,
     usbdesc_manufacturer,
     usbdesc_product
@@ -174,5 +170,5 @@ const S_USBD_INFO_T usb_descriptors = {
     usbdesc_device,
     usbdesc_conf,
     usbdesc_str,
-    NULL,NULL,NULL
+    NULL
 };
