@@ -10,7 +10,7 @@ MAKE_FIRMWARE := make_firmware.mk
 	@echo "example: make firmware - make final firmware"
 
 clean:
-	-rm -fR $(DIR_OBJ) $(BUILD_ID)
+	-rm -fR $(DIR_OBJ)
 
 all:
 	@$(MAKE) --no-print-directory clean

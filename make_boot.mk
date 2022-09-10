@@ -51,7 +51,7 @@ DIR_OBJ_APP := $(DIR_OBJ)/$(DIR_SRC_APP)
 $(DIR_OBJ_BOOT):
 	mkdir -p $@
 
-$(DIR_OBJ_BOOT)/%.o: $(DIR_SRC)/%.c | $(DIR_OBJ_BOOT) #$(BUILD_ID)
+$(DIR_OBJ_BOOT)/%.o: $(DIR_SRC)/%.c | $(DIR_OBJ_BOOT) $(BUILD_ID)
 	@echo "BL C: $(notdir $<)"
 	@$(CC) -c $(FLAGS_C_BOOT) $< -o $@
 

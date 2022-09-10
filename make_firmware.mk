@@ -26,7 +26,7 @@ LDSCRIPT_FW := $(DIR_SRC)/orca_ram.ld
 #######################################
 FLAGS_C_FW := $(FLAGS_C_COMMON)
 FLAGS_C_FW += $(addprefix -I,$(DIRS_INCLUDE_FW))
-FLAGS_C_FW += -Ofast
+FLAGS_C_FW += -Os #-Ofast
 #FLAGS_C_FW += -std=gnu11
 FLAGS_C_FW += -Wall -Wpedantic
 
@@ -44,7 +44,7 @@ DIR_OBJ_FW := $(DIR_OBJ)/$(DIR_SRC)
 #$(DIR_OBJ_FW):
 #	mkdir -p $@
 
-$(DIR_OBJ_FW)/%.o: $(DIR_SRC)/%.c | $(DIR_OBJ_FW) #$(BUILD_ID)
+$(DIR_OBJ_FW)/%.o: $(DIR_SRC)/%.c | $(DIR_OBJ_FW) $(BUILD_ID)
 	@echo "FW C: $(notdir $<)"
 	@$(CC) -c $(FLAGS_C_FW) $< -o $@
 

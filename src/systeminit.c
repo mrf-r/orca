@@ -1,5 +1,7 @@
 #include "SEGGER_RTT.h"
 #include "NUC123.h"
+#include "../obj/signature.h"
+#include "system_dbgout.h"
 
 extern unsigned int __data_start__;
 extern unsigned int __data_end__;
@@ -129,5 +131,5 @@ void SystemInit()
     }
 
     SEGGER_RTT_Init();
-    SEGGER_RTT_Write(0, "rtt start\n", 10);
+    print_s(NEWLINE GIT_VERSION_FULL NEWLINE);
 }

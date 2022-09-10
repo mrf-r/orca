@@ -17,7 +17,7 @@ endif
 #######################################
 DIR_SRC := src
 DIR_OBJ := obj
-BUILD_ID := $(DIR_OBJ)/build_signature.h
+BUILD_ID := $(DIR_OBJ)/signature.h
 
 #######################################
 FLAGS_MCU := -mcpu=cortex-m0 -mthumb
