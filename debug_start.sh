@@ -1,10 +1,12 @@
 IP="$(cat /etc/resolv.conf | grep nameserver | awk -F" " '{print $2;}')"
 echo $IP
-echo bindto $IP > bindto.cfg
-echo target extended-remote $IP:3333 > .gdbremote
+echo bindto $IP > obj/bindto.cfg
+echo target extended-remote $IP:3333 > obj/.gdbremote
 
-# get loadaddr
-#arm-none-eabi-objdump obj/ORCA_FW.elf -x | grep __Vectors | awk -F" " '{print $1;}'
+LOADADDRESS="$(arm-none-eabi-objdump obj/ORCA_FW.elf -x | grep __Vectors | awk -F" " '{print $1;}')"
+RTTADDRESS="$(arm-none-eabi-objdump obj/ORCA_FW.elf -x | grep _SEGGER_RTT | awk -F" " '{print $1;}')"
+RTTSIZE="$(arm-none-eabi-objdump obj/ORCA_FW.elf -x | grep _SEGGER_RTT | awk -F" " '{print $5;}')"
+echo monitor rtt setup 0x$RTTADDRESS 0x$RTTSIZE '"SEGGER RTT"' > obj/.gdbrtt
 
 #cmd.exe /c start /min cmd.exe /c e:/__gcc/xpack-openocd-0.11.0-3/bin/openocd.exe -f openocd-orca.cfg
 cmd.exe /c start /min cmd.exe /c e:/__gcc/xpack-openocd-0.11.0-3/bin/openocd.exe -f openocd-orca.cfg

@@ -1,5 +1,7 @@
 #include "SEGGER_RTT.h"
 #include "NUC123.h"
+#include "../obj/signature.h"
+#include "system_dbgout.h"
 
 extern unsigned int __data_start__;
 extern unsigned int __data_end__;
@@ -16,17 +18,8 @@ void SystemInit()
     SYS->PORCR = 0x5AA5;
 
     // init clock
-
-    // system init
-
     // Enable XT1_OUT (PF.0) and XT1_IN (PF.1)
-    // SYS->GPF_MFP |= SYS_GPF_MFP_PF0_XT1_OUT | SYS_GPF_MFP_PF1_XT1_IN;
-    SYS->ALT_MFP = 0x40000000;
-    SYS->ALT_MFP1 = 0x0A3F0000;
-    SYS->GPA_MFP = 0x00008000;
-    SYS->GPC_MFP = 0x00002020;
-    SYS->GPD_MFP = 0x0000003F;
-    SYS->GPF_MFP = 0x0002000F;
+    SYS->GPF_MFP |= SYS_GPF_MFP_PF0_XT1_OUT | SYS_GPF_MFP_PF1_XT1_IN;
 
     // Enable Internal RC 22.1184 MHz clock
     CLK->PWRCON |= CLK_PWRCON_OSC22M_EN_Msk;
@@ -79,6 +72,21 @@ void SystemInit()
         | CLK_APBCLK_UART0_EN_Msk | CLK_APBCLK_SPI1_EN_Msk | CLK_APBCLK_PWM23_EN_Msk
         | CLK_APBCLK_I2C0_EN_Msk | CLK_APBCLK_TMR0_EN_Msk;
 
+    // init gpio pins
+    SYS->ALT_MFP = 0x40000000; // uart tx
+    SYS->ALT_MFP1 = 0x0A3F0000; // i2c, adc[5:0]
+    SYS->GPA_MFP = 0x00008000; // pwm3
+    SYS->GPC_MFP = 0x00002020; // uart tx, mosi1
+    SYS->GPD_MFP = 0x0000003F; // adc
+    SYS->GPF_MFP = 0x0002000F; // i2c, keep xtal
+
+    PA->PMD = 0xD5FFFFFF;
+    PB->PMD = 0xCFC000FF;
+    PC->PMD = 0xF555F555;
+    PD->PMD = 0xFFFFF000;
+    PD->OFFD = 0x003F0000;
+    PF->PMD = 0x000000A1;
+
     /*
     // ISP enable
     FMC->ISPCON = FMC_ISPCON_CFGUEN_Msk | FMC_ISPCON_APUEN_Msk | FMC_ISPCON_ISPEN_Msk;
@@ -105,15 +113,7 @@ void SystemInit()
     */
    
     // close access
-    SYS->REGWRPROT = 0x00;
-
-    // init gpio pins
-    PA->PMD = 0xD5FFFFFF;
-    PB->PMD = 0xCFC000FF;
-    PC->PMD = 0xF555F555;
-    PD->PMD = 0xFFFFF000;
-    PD->OFFD = 0x003F0000;
-    PF->PMD = 0x000000A1;
+    // SYS->REGWRPROT = 0x00;
 
     // c init memory
     unsigned int* ram;
@@ -131,5 +131,5 @@ void SystemInit()
     }
 
     SEGGER_RTT_Init();
-    SEGGER_RTT_Write(0, "rtt start\n", 10);
+    print_s(NEWLINE GIT_VERSION_FULL NEWLINE);
 }

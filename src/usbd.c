@@ -13,9 +13,8 @@
 #include <string.h>
 #include "NUC123.h"
 
-#if 1
-void prlw(char* str, ...);
-#define DBG_PRINTF      prlw
+#if 0
+#define DBG_PRINTF      printf
 #else
 #define DBG_PRINTF(...)
 #endif
@@ -102,13 +101,9 @@ void USBD_Open(const S_USBD_INFO_T *param, CLASS_REQ pfnClassReq, SET_INTERFACE_
   *
   * @details  Enable WAKEUP, FLDET, USB and BUS interrupts. Disable software-disconnect function after 100ms delay with SysTick timer.
   */
-#warning "add delay"
 void USBD_Start(void)
 {
-    //CLK_SysTickDelay(100000);
-	
-	
-	
+    CLK_SysTickDelay(100000);
     /* Disable software-disconnect function */
     USBD_CLR_SE0();
 

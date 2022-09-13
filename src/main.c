@@ -1,27 +1,16 @@
-#include <stdint.h>
-
-/*
-__attribute__((at(0x00300000)))
-volatile const uint32_t user_conf[2] = {
-        //0x80A00046, // WDT disable, BOR reset @ 2.7V, LDROM BOOT, Flash unlocked, dataflash 4kB @ 0x0001F000
-        //0x0001F000 // dataflah address as is
-        0xFFFFFFBF, // boot from ldrom
-        0x0001F000 // dataflah address as is
-};
-// */
 
 #include "NUC123.h"
-//#include "clk.h"
-#include "SEGGER_RTT.h"
+#include "system_dbgout.h"
+#include "usb_midi.h"
+
 #include "controls.h"
 #include "orca.h"
-#include "usb_midi.h"
 
 volatile uint32_t sr_counter;
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
 
-void mainloop()
+static inline void mainLoop()
 {
     static uint32_t next_upd = 0;
     static uint32_t led_toggle = 0;
@@ -49,15 +38,12 @@ void mainloop()
         next_upd += 48000;
     }
     midi_test_check();
-    
-    usb_midi_tap();
-
 
     timeslot = timer_get_value();
     if (timeslot > timeslot_max)
         timeslot_max = timeslot;
 
-
+    usbmidiTap();
     // uint32_t lp = sr_counter & 0x7;
     // led_set(lp, hsv2c(adc_knob[lp] / 4, adc_modwheel / 32, adc_pitchwheel / 32));
 
@@ -75,47 +61,20 @@ void mainloop()
     */
 }
 
-volatile uint32_t readcfg;
-
-int main()
+int main(void)
 {
-    // usbflasher_start();
+    print_s(NEWLINE "+-------------------------------------------+");
+    print_s(NEWLINE "|          NUC123 Orca mini25               |");
+    print_s(NEWLINE "+-------------------------------------------+");
 
     tim0_start_sr();
-    lcd_start();
-    led_init();
-    adc_start();
-    midi_start();
+    // lcd_start();
+    // led_init();
+    // adc_start();
+    // midi_start();
 
-    // rtt in systeminit.c
-    // SEGGER_RTT_Init();
-    // SEGGER_RTT_Write(0, "hello!\n", 7);
-
-
-    usbflasher_start();
-    /*
-    USBD_SET_SE0();
-    for (int i = 0; i < 12000; i++)
-        wait_next_48k_tick();
-
-    // Open USB controller
-    USBD_Open(&usb_descriptors, NULL, NULL);
-
-    // Endpoint configuration
-    midi_endpoints_init();
-    // Start USB device
-    USBD_Start();
-    */
-
-
-    // NVIC_EnableIRQ(USBD_IRQn);
-    // NVIC_EnableIRQ(UART_IRQn);
-
-    // uint8_t hue = sr_counter >> 10;
-    // color_t c = hsv2c(hue,128,128);
-    // led_set(0,c);
-    //
-
+    usbmidiStart();
+    
     for (uint32_t i = 0; i < 26; i++) {
         // led_set(i, rgb2c(8, 8, 8));
         led_set(i, hsv2c(i * 8, 192, 4));
@@ -123,41 +82,8 @@ int main()
     // led_set(18, rgb2c(8, 0, 0));
     // led_set(25, rgb2c(8, 0, 0));
 
-    while (1)
-        ;//mainloop();
 
-    while (!(SYS->REGWRPROT & 0x1))
-        ;
-
-    CLK->PWRCON |= 0x40; //
-    CLK->AHBCLK |= 0x40;
-
-    /*
-    FMC->ISPCON = 0xFF; // enable fucking everything
-
-    FMC->ISPADR = 0x00300000;
-    FMC->ISPDAT = 0xFFFFFFFF;
-    FMC->ISPCMD = 0x22;
-    FMC->ISPTRG = 1;
-    */
-
-    /*
-    perfect bootloader:
-    start
-    clock init
-    copy bootloader code to sram
-    run usb in polling mode
-
-    */
-
-    // clk init
-    // vtor init
-    //  there is no VTOR in M0 core. switch to polling mode
-    // usb start
-    // volatile uint32_t counter = 0;
     while (1) {
-        // poll USB interrupt request
-
-        // counter ++;
+        mainLoop();
     }
 }

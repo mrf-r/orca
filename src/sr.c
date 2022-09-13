@@ -1,12 +1,21 @@
 
 #include "NUC123.h"
+#include "orca.h"
+
+#if SAMPLE_RATE == 96000
+#define SR_TIMER_PERIOD 750
+#elif SAMPLE_RATE == 48000
+#define SR_TIMER_PERIOD 1500
+#else
+#error "SAMPLE RATE CONFIG ERROR"
+#endif
 
 void tim0_start_sr()
 {
     //
     // TIMER0->TCSR = TIMER_TCSR_IE_Msk | (1 << TIMER_TCSR_MODE_Pos);
     TIMER0->TCSR = 2 << TIMER_TCSR_MODE_Pos;
-    TIMER0->TCMPR = 750 - 1; // 750 - 96k 1500 - 48k
+    TIMER0->TCMPR = SR_TIMER_PERIOD - 1; // 750 - 96k 1500 - 48k
     TIMER0->TCSR |= TIMER_TCSR_CEN_Msk;
     // NVIC_SetPriority(TMR0_IRQn,2);
     // NVIC_EnableIRQ(TMR0_IRQn);
@@ -14,9 +23,9 @@ void tim0_start_sr()
 // unused, we can not remap table
 void TMR0_IRQHandler()
 {
-    TIMER0->TCSR = TIMER_TISR_TIF_Msk;
-    PA->DOUT |= 1 << 12;
-    PA->DOUT &= ~(1 << 12);
+    TIMER0->TISR = TIMER_TISR_TIF_Msk;
+    // PA->DOUT |= 1 << 12;
+    // PA->DOUT &= ~(1 << 12);
 }
 
 //~ 21 uS

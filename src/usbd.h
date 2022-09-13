@@ -1,12 +1,15 @@
-/******************************************************************************
+/**************************************************************************//**
  * @file     usbd.h
- * @brief    M451 series USB driver header file
- * @version  2.0.0
- * @date     10, January, 2014
+ * @version  V3.0
+ * $Revision: 18 $
+ * $Date: 15/09/03 11:15a $
+ * @brief    NUC123 series USB driver header file
  *
  * @note
+ * SPDX-License-Identifier: Apache-2.0
  * Copyright (C) 2014~2015 Nuvoton Technology Corp. All rights reserved.
  ******************************************************************************/
+
 #ifndef __USBD_H__
 #define __USBD_H__
 
@@ -22,14 +25,16 @@
 /** @addtogroup USBD_EXPORTED_STRUCTS USBD Exported Structs
   @{
 */
+
+
 typedef struct s_usbd_info
 {
     const uint8_t *gu8DevDesc;            /*!< Pointer for USB Device Descriptor          */
     const uint8_t *gu8ConfigDesc;         /*!< Pointer for USB Configuration Descriptor   */
     const uint8_t **gu8StringDesc;        /*!< Pointer for USB String Descriptor pointers */
-//    const uint8_t **gu8HidReportDesc;     /*!< Pointer for USB HID Report Descriptor      */
-//    const uint32_t *gu32HidReportSize;    /*!< Pointer for HID Report descriptor Size */
-//    const uint32_t *gu32ConfigHidDescIdx; /*!< Pointer for HID Descriptor start index */
+    const uint8_t **gu8HidReportDesc;     /*!< Pointer for USB HID Report Descriptor      */
+    const uint32_t *gu32HidReportSize;    /*!< Pointer for HID Report descriptor Size */
+    const uint32_t *gu32ConfigHidDescIdx; /*!< Pointer for HID Descriptor start index */
 
 } S_USBD_INFO_T;
 
@@ -39,11 +44,14 @@ extern const S_USBD_INFO_T gsInfo;
 
 
 
-
 /** @addtogroup USBD_EXPORTED_CONSTANTS USBD Exported Constants
   @{
 */
+
 #define USBD_BUF_BASE   (USBD_BASE+0x100)
+
+
+
 #define USBD_MAX_EP     8
 
 #define EP0     0       /*!< Endpoint 0 */
@@ -111,23 +119,23 @@ extern const S_USBD_INFO_T gsInfo;
 /*                USB Specific Macros                                         */
 /******************************************************************************/
 
-#define USBD_WAKEUP_EN          USBD_INTEN_WKEN_Msk         /*!< USB Wake-up Enable */
-#define USBD_DRVSE0             USBD_SE0_SE0_Msk            /*!< Drive SE0 */
+#define USBD_WAKEUP_EN          USBD_INTEN_WAKEUP_EN_Msk    /*!< USB Wake-up Enable */
+#define USBD_DRVSE0             USBD_DRVSE0_DRVSE0_Msk      /*!< Drive SE0 */
 
-#define USBD_DPPU_EN            USBD_ATTR_DPPUEN_Msk        /*!< USB D+ Pull-up Enable */
+#define USBD_DPPU_EN            USBD_ATTR_DPPU_EN_Msk       /*!< USB D+ Pull-up Enable */
 #define USBD_PWRDN              USBD_ATTR_PWRDN_Msk         /*!< PHY Turn-On */
-#define USBD_PHY_EN             USBD_ATTR_PHYEN_Msk         /*!< PHY Enable */
-#define USBD_USB_EN             USBD_ATTR_USBEN_Msk         /*!< USB Enable */
+#define USBD_PHY_EN             USBD_ATTR_PHY_EN_Msk        /*!< PHY Enable */
+#define USBD_USB_EN             USBD_ATTR_USB_EN_Msk        /*!< USB Enable */
 
-#define USBD_INT_BUS            USBD_INTEN_BUSIEN_Msk       /*!< USB Bus Event Interrupt */
-#define USBD_INT_USB            USBD_INTEN_USBIEN_Msk       /*!< USB Event Interrupt */
-#define USBD_INT_FLDET          USBD_INTEN_VBDETIEN_Msk     /*!< USB VBUS Detection Interrupt */
-#define USBD_INT_WAKEUP         (USBD_INTEN_NEVWKIEN_Msk | USBD_INTEN_WKEN_Msk)     /*!< USB No-Event-Wake-Up Interrupt */
+#define USBD_INT_BUS            USBD_INTEN_BUS_IE_Msk       /*!< USB Bus Event Interrupt */
+#define USBD_INT_USB            USBD_INTEN_USB_IE_Msk       /*!< USB USB Event Interrupt */
+#define USBD_INT_FLDET          USBD_INTEN_FLDET_IE_Msk     /*!< USB Float Detect Interrupt */
+#define USBD_INT_WAKEUP         (USBD_INTEN_WAKEUP_IE_Msk | USBD_INTEN_WAKEUP_EN_Msk)   /*!< USB Wake-up Interrupt */
 
-#define USBD_INTSTS_WAKEUP      USBD_INTSTS_NEVWKIF_Msk     /*!< USB No-Event-Wake-Up Interrupt Status */
-#define USBD_INTSTS_FLDET       USBD_INTSTS_VBDETIF_Msk     /*!< USB Float Detect Interrupt Status */
-#define USBD_INTSTS_BUS         USBD_INTSTS_BUSIF_Msk       /*!< USB Bus Event Interrupt Status */
-#define USBD_INTSTS_USB         USBD_INTSTS_USBIF_Msk       /*!< USB Event Interrupt Status */
+#define USBD_INTSTS_WAKEUP      USBD_INTSTS_WAKEUP_STS_Msk  /*!< USB Wakeup Interrupt Status */
+#define USBD_INTSTS_FLDET       USBD_INTSTS_FLDET_STS_Msk   /*!< USB Float Detect Interrupt Status */
+#define USBD_INTSTS_BUS         USBD_INTSTS_BUS_STS_Msk     /*!< USB Bus Event Interrupt Status */
+#define USBD_INTSTS_USB         USBD_INTSTS_USB_STS_Msk     /*!< USB USB Event Interrupt Status */
 #define USBD_INTSTS_SETUP       USBD_INTSTS_SETUP_Msk       /*!< USB Setup Event */
 #define USBD_INTSTS_EP0         USBD_INTSTS_EPEVT0_Msk      /*!< USB Endpoint 0 Event */
 #define USBD_INTSTS_EP1         USBD_INTSTS_EPEVT1_Msk      /*!< USB Endpoint 1 Event */
@@ -141,7 +149,7 @@ extern const S_USBD_INFO_T gsInfo;
 #define USBD_STATE_USBRST       USBD_ATTR_USBRST_Msk        /*!< USB Bus Reset */
 #define USBD_STATE_SUSPEND      USBD_ATTR_SUSPEND_Msk       /*!< USB Bus Suspend */
 #define USBD_STATE_RESUME       USBD_ATTR_RESUME_Msk        /*!< USB Bus Resume */
-#define USBD_STATE_TIMEOUT      USBD_ATTR_TOUT_Msk          /*!< USB Bus Timeout */
+#define USBD_STATE_TIMEOUT      USBD_ATTR_TIMEOUT_Msk       /*!< USB Bus Timeout */
 
 #define USBD_CFGP_SSTALL        USBD_CFGP_SSTALL_Msk        /*!< Set Stall */
 #define USBD_CFG_CSTALL         USBD_CFG_CSTALL_Msk         /*!< Clear Stall */
@@ -152,8 +160,8 @@ extern const S_USBD_INFO_T gsInfo;
 #define USBD_CFG_TYPE_ISO       (1ul << USBD_CFG_ISOCH_Pos) /*!< Isochronous */
 
 
-
 /*@}*/ /* end of group USBD_EXPORTED_CONSTANTS */
+
 
 
 /** @addtogroup USBD_EXPORTED_FUNCTIONS USBD Exported Functions
@@ -244,7 +252,7 @@ extern const S_USBD_INFO_T gsInfo;
   * @details  Set DRVSE0 bit of USB_DRVSE0 register to enable software-disconnect function. Force USB PHY transceiver to drive SE0 to bus.
   *
   */
-#define USBD_SET_SE0()              ((uint32_t)(USBD->SE0 |= USBD_DRVSE0))
+#define USBD_SET_SE0()              ((uint32_t)(USBD->DRVSE0 |= USBD_DRVSE0))
 
 /**
   * @brief    Disable SE0
@@ -256,7 +264,7 @@ extern const S_USBD_INFO_T gsInfo;
   * @details  Clear DRVSE0 bit of USB_DRVSE0 register to disable software-disconnect function.
   *
   */
-#define USBD_CLR_SE0()              ((uint32_t)(USBD->SE0 &= ~USBD_DRVSE0))
+#define USBD_CLR_SE0()              ((uint32_t)(USBD->DRVSE0 &= ~USBD_DRVSE0))
 
 /**
   * @brief       Set USB device address
@@ -363,12 +371,12 @@ extern const S_USBD_INFO_T gsInfo;
   * @details  Check the connection state by FLDET bit of USB_FLDET register.
   *
   */
-#define USBD_IS_ATTACHED()          ((uint32_t)(USBD->VBUSDET & USBD_VBUSDET_VBUSDET_Msk))
+#define USBD_IS_ATTACHED()          ((uint32_t)(USBD->FLDET & USBD_FLDET_FLDET_Msk))
 
 /**
   * @brief      Stop USB transaction of the specified endpoint ID
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return     None
   *
@@ -380,7 +388,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief      Set USB DATA1 PID for the specified endpoint ID
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return     None
   *
@@ -388,12 +396,12 @@ extern const S_USBD_INFO_T gsInfo;
   *             Base on this setting, hardware will toggle PID between DATA0 and DATA1 automatically for IN token transactions.
   *
   */
-#define USBD_SET_DATA1(ep)          (*((__IO uint32_t *) ((uint32_t)&USBD->EP[0].CFG + (uint32_t)((ep) << 4))) |= USBD_CFG_DSQSYNC_Msk)
+#define USBD_SET_DATA1(ep)          (*((__IO uint32_t *) ((uint32_t)&USBD->EP[0].CFG + (uint32_t)((ep) << 4))) |= USBD_CFG_DSQ_SYNC_Msk)
 
 /**
   * @brief      Set USB DATA0 PID for the specified endpoint ID
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return     None
   *
@@ -401,12 +409,12 @@ extern const S_USBD_INFO_T gsInfo;
   *             Base on this setting, hardware will toggle PID between DATA0 and DATA1 automatically for IN token transactions.
   *
   */
-#define USBD_SET_DATA0(ep)          (*((__IO uint32_t *) ((uint32_t)&USBD->EP[0].CFG + (uint32_t)((ep) << 4))) &= (~USBD_CFG_DSQSYNC_Msk))
+#define USBD_SET_DATA0(ep)          (*((__IO uint32_t *) ((uint32_t)&USBD->EP[0].CFG + (uint32_t)((ep) << 4))) &= (~USBD_CFG_DSQ_SYNC_Msk))
 
 /**
   * @brief      Set USB payload size (IN data)
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @param[in]  size The transfer length.
   *
@@ -420,7 +428,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief      Get USB payload size (OUT data)
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return     The value of USB_MXPLDx register.
   *
@@ -432,7 +440,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief      Configure endpoint
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @param[in]  config The USB configuration.
   *
@@ -446,7 +454,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief      Set USB endpoint buffer
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @param[in]  offset The SRAM offset.
   *
@@ -460,7 +468,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief      Get the offset of the specified USB endpoint buffer
   *
-  * @param[in]  ep The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]  ep The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return     The offset of the specified endpoint buffer.
   *
@@ -472,7 +480,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief       Set USB endpoint stall state
   *
-  * @param[in]   ep  The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]   ep  The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return      None
   *
@@ -484,7 +492,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief       Clear USB endpoint stall state
   *
-  * @param[in]   ep  The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]   ep  The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @return      None
   *
@@ -495,7 +503,7 @@ extern const S_USBD_INFO_T gsInfo;
 /**
   * @brief       Get USB endpoint stall state
   *
-  * @param[in]   ep  The USB endpoint ID. M451 Series supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
+  * @param[in]   ep  The USB endpoint ID. NUC123 supports 8 hardware endpoint ID. This parameter could be 0 ~ 7.
   *
   * @retval      0      USB endpoint is not stalled.
   * @retval      Others USB endpoint is stalled.
@@ -621,21 +629,16 @@ static __INLINE uint32_t USBD_GetStall(uint8_t epnum)
 }
 
 
-//extern volatile uint8_t g_usbd_RemoteWakeupEn;
-typedef void (*VENDOR_REQ)(void);           /*!< Functional pointer type definition for Vendor class */
+extern volatile uint8_t g_usbd_RemoteWakeupEn;
+
+typedef void (*VENDOR_REQ)(void);           /*!< Functional pointer type declaration for Vendor class */
 typedef void (*CLASS_REQ)(void);            /*!< Functional pointer type declaration for USB class request callback handler */
 typedef void (*SET_INTERFACE_REQ)(void);    /*!< Functional pointer type declaration for USB set interface request callback handler */
 typedef void (*SET_CONFIG_CB)(void);       /*!< Functional pointer type declaration for USB set configuration request callback handler */
 
-
 /*--------------------------------------------------------------------*/
-void USBD_MemReset(uint8_t *src, uint32_t size);
-
-void USBD_Ctrl_Stall(void);
-
-//void USBD_Open(const S_USBD_INFO_T *param);
 void USBD_Open(const S_USBD_INFO_T *param, CLASS_REQ pfnClassReq, SET_INTERFACE_REQ pfnSetInterface);
-//void USBD_Start(void);
+void USBD_Start(void);
 void USBD_GetSetupPacket(uint8_t *buf);
 void USBD_ProcessSetupPacket(void);
 void USBD_StandardRequest(void);
@@ -644,17 +647,17 @@ void USBD_CtrlIn(void);
 void USBD_PrepareCtrlOut(uint8_t *pu8Buf, uint32_t u32Size);
 void USBD_CtrlOut(void);
 void USBD_SwReset(void);
-//void USBD_SetVendorRequest(VENDOR_REQ pfnVendorReq);
+void USBD_SetVendorRequest(VENDOR_REQ pfnVendorReq);
 void USBD_SetConfigCallback(SET_CONFIG_CB pfnSetConfigCallback);
-//void USBD_LockEpStall(uint32_t u32EpBitmap);
+void USBD_LockEpStall(uint32_t u32EpBitmap);
 
-/*@}*/ /* end of group M451_USBD_EXPORTED_FUNCTIONS */
+/*@}*/ /* end of group USBD_EXPORTED_FUNCTIONS */
 
-/*@}*/ /* end of group M451_USBD_Driver */
+/*@}*/ /* end of group USBD_Driver */
 
-/*@}*/ /* end of group M451_Device_Driver */
+/*@}*/ /* end of group Device_Driver */
 
 
 #endif //__USBD_H__
 
-/*** (C) COPYRIGHT 2014 Nuvoton Technology Corp. ***/
+/*** (C) COPYRIGHT 2014~2015 Nuvoton Technology Corp. ***/
