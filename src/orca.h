@@ -70,11 +70,13 @@
 
 */
 
-#define IRQ_PRIORITY_UART_MIDI 0x0
-#define IRQ_PRIORITY_USB 0x0
-
+#define IRQ_PRIORITY_TIMER_SR 0x0
+#define IRQ_PRIORITY_UART_MIDI 0x1
+#define IRQ_PRIORITY_USB 0x2
+#define IRQ_PRIORITY_I2C 0x3
 
 #define SAMPLE_RATE 96000
+
 typedef struct
 {
 	uint8_t green;

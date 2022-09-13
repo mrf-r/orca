@@ -1,10 +1,19 @@
 #include "usb_midi.h"
 #include "system_dbgout.h"
 
+/* 
+TODO:
+- connection status, empty buffer on disconnect
+- host read timeout, empty on inactive receiver
+- head tail pointers instead of positions???
+*/
+
 #define USB_IRQ_DISABLE() __disable_irq()
 #define USB_IRQ_ENABLE() __enable_irq()
 
 volatile unsigned counter_usbd_irq = 0;
+volatile unsigned counter_usbd_received = 0;
+volatile unsigned counter_usbd_transmitted = 0;
 
 #define SETUP_BUF_BASE 0
 #define SETUP_BUF_LEN 8
@@ -78,6 +87,7 @@ static void usbmidiCopyInFromEp()
             // umi_buf[umi_wp] = src[i];
             USBD_MemCopy((uint8_t*)&umi_buf[umi_wp], (uint8_t*)&src[i], 4);
             umi_wp = (umi_wp + 1) & (UMI_BUF_SIZE - 1);
+            counter_usbd_received++;
         }
         // prepare for next data reception
         umi_ep_unprocessed = 0;
@@ -95,6 +105,7 @@ static void usbmidiCopyOutToEp()
         USBD_MemCopy((uint8_t*)&dst[umo_ep_proc], (uint8_t*)&umo_buf[umo_rp], 4);
         umo_rp = (umo_rp + 1) & (UMO_BUF_SIZE - 1);
         umo_ep_proc++;
+        counter_usbd_transmitted++;
     }
     // validate EP
     if (umo_ep_proc)
@@ -109,12 +120,13 @@ void USBD_IRQHandler(void)
     // debug stuff
     if (!u32IntSts)
         return;
-    print_s("\n");
-    print_d32(counter_usbd_irq);
-    print_s(" int:");
-    print_d32(u32IntSts);
-    print_s(" bus:");
-    print_d32(u32State);
+    #warning "check irq count"
+    // print_s("\n");
+    // print_d32(counter_usbd_irq);
+    // print_s(" int:");
+    // print_d32(u32IntSts);
+    // print_s(" bus:");
+    // print_d32(u32State);
     // debug stuff end
 
     counter_usbd_irq++;
@@ -188,7 +200,7 @@ void USBD_IRQHandler(void)
             /* Clear event flag */
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP3);
             // 0x82 DEVICE OUT -> HOST IN
-            // EP3_Handler();
+            // previous packet has been sent
             usbmidiCopyOutToEp();
         }
 
