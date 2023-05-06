@@ -44,7 +44,7 @@ static inline void mainLoop()
     if (timeslot > timeslot_max)
         timeslot_max = timeslot;
 
-    // usbmidiTap();
+    usbmidiTap();
     // uint32_t lp = sr_counter & 0x7;
     // led_set(lp, hsv2c(adc_knob[lp] / 4, adc_modwheel / 32, adc_pitchwheel / 32));
 
@@ -75,7 +75,7 @@ int main(void)
     midi_start();
     kbdInit();
 
-    // usbmidiStart();
+    usbmidiStart();
     
     for (uint32_t i = 0; i < 26; i++) {
         // led_set(i, rgb2c(8, 8, 8));
