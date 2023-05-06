@@ -3,8 +3,8 @@
 #include "system_dbgout.h"
 #include "usb_midi.h"
 
-#include "controls.h"
 #include "orca.h"
+#include "keyboard.h"
 
 volatile uint32_t sr_counter;
 volatile uint32_t timeslot;
@@ -21,7 +21,8 @@ static inline void mainLoop()
     adc_tick(sr_counter);
     lcd_scan_tick(sr_counter);
 
-    controls_tick(sr_counter);
+    // controls_tick(sr_counter);
+    kbdTap(sr_counter);
     cc_write(adc_knob[0]);
     //  update
     led_scan_tick(sr_counter);
@@ -43,7 +44,7 @@ static inline void mainLoop()
     if (timeslot > timeslot_max)
         timeslot_max = timeslot;
 
-    usbmidiTap();
+    // usbmidiTap();
     // uint32_t lp = sr_counter & 0x7;
     // led_set(lp, hsv2c(adc_knob[lp] / 4, adc_modwheel / 32, adc_pitchwheel / 32));
 
@@ -68,12 +69,13 @@ int main(void)
     print_s(NEWLINE "+-------------------------------------------+");
 
     tim0_start_sr();
-    // lcd_start();
-    // led_init();
-    // adc_start();
-    // midi_start();
+    lcd_start();
+    led_init();
+    adc_start();
+    midi_start();
+    kbdInit();
 
-    usbmidiStart();
+    // usbmidiStart();
     
     for (uint32_t i = 0; i < 26; i++) {
         // led_set(i, rgb2c(8, 8, 8));

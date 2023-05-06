@@ -104,20 +104,22 @@ extern volatile uint16_t adc_pad[16];
 extern volatile uint32_t timeslot;
 extern volatile uint32_t timeslot_max;
 
-void lcd_scan_tick(uint32_t sr)
+void lcd_scan_tick__(uint32_t sr)
+// 1st pad draw scope
 {
     if ((sr & 0xFF) == 0) {
         static const uint8_t bmp = 0x1;
-        uint16_t pos = (sr>>8)&0x7F;
-        mgl_setworkingarea(pos,0,1,MGL_DISPLAY_HEIGHT);
+        uint16_t pos = (sr >> 8) & 0x7F;
+        mgl_setworkingarea(pos, 0, 1, MGL_DISPLAY_HEIGHT);
         mgl_fill(MGL_COLOR_LOW);
         mgl_setcursor(pos, 0x3FF - adc_pad[0]);
-        mgl_drawbmp(&bmp,1,1);
-        
+        mgl_drawbmp(&bmp, 1, 1);
+
         lcd_update_line(sr);
     }
 }
-void lcd_scan_tick__(uint32_t sr)
+void lcd_scan_tick_(uint32_t sr)
+// all adc capture
 {
     if ((sr & 0xFF) == 0) {
         /*
@@ -165,6 +167,48 @@ void lcd_scan_tick__(uint32_t sr)
         mgl_setcursor(96, 56);
         mgl_hexvalue16(timeslot_max--);
 
+        lcd_update_line(sr);
+    }
+}
+
+extern uint8_t buttons_state[10];
+
+extern uint8_t lastkey;
+extern uint8_t lastvelo;
+extern uint16_t kbd_rawvelo;
+extern uint16_t buttons;
+
+void lcd_scan_tick(uint32_t sr)
+// matrix scan
+{
+    if ((sr & 0xFF) == 0) {
+        mgl_fill(MGL_COLOR_LOW);
+
+        for (int i = 0; i < 8; i++) {
+            mgl_setcursor(0, 8 * i);
+            if (buttons_state[i] != 0xFF)
+                mgl_hexvalue16(buttons_state[i]);
+        }
+        mgl_setcursor(32, 0);
+        if (buttons_state[8] != 0xFF)
+            mgl_hexvalue16(buttons_state[8]);
+        mgl_setcursor(32, 8);
+        if (buttons_state[9] != 0xFF)
+            mgl_hexvalue16(buttons_state[9]);
+
+        mgl_setcursor(32, 16);
+        mgl_hexvalue16(lastkey);
+        mgl_setcursor(32, 24);
+        mgl_hexvalue16(lastvelo);
+        mgl_setcursor(32, 32);
+        mgl_hexvalue16(kbd_rawvelo);
+        mgl_setcursor(32, 40);
+        mgl_hexvalue16(buttons);
+
+        mgl_setcursor(96, 48);
+        mgl_hexvalue16(timeslot);
+        mgl_setcursor(96, 56);
+        mgl_hexvalue16(timeslot_max--);
         lcd_update_line(sr);
     }
 }

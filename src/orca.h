@@ -3,6 +3,18 @@
 
 #include <stdint.h>
 
+// oversimplified assertion
+#if DEBUG == 1
+#define ASSERT(some)  \
+    {                 \
+        if (!(some))    \
+            while (1) \
+                ;     \
+    }
+#else
+#define ASSERT(...)
+#endif
+
 /*
 нужно инитить стек при загрузке в ОЗУ
 нужно понять как там правильно грузить в флеш
@@ -23,8 +35,6 @@
 
 режим и2с контроллера
 */
-
-
 
 /*
 
@@ -50,13 +60,13 @@
 27 - PC11 - scanO CONTROL BUTTONS 1st
 28 - PC10 - scanO KB 4th 1 key 2nd contact
 29 - PC9 - scanO KB 4th 1 key 1st contact
-30 - PC8 - scanO KB 3rd 8 keys 2nd contact 
+30 - PC8 - scanO KB 3rd 8 keys 2nd contact
 17 - PC5 - UART0-TXD - MIDI out
-18 - PC4 - scanO KB 3rd 8 keys 1st contact 
-19 - PC3 - scanO KB 2st 8 keys 2nd contact 
-20 - PC2 - scanO KB 2nd 8 keys 1st contact 
-21 - PC1 - scanO KB 1st 8 keys 2nd contact 
-22 - PC0 - scanO KB 1st 8 keys 1st contact 
+18 - PC4 - scanO KB 3rd 8 keys 1st contact
+19 - PC3 - scanO KB 2st 8 keys 2nd contact
+20 - PC2 - scanO KB 2nd 8 keys 1st contact
+21 - PC1 - scanO KB 1st 8 keys 2nd contact
+22 - PC0 - scanO KB 1st 8 keys 1st contact
 
 38 - PD0 - ADC0 - Pitch
 39 - PD1 - ADC1 - Mod
@@ -79,11 +89,10 @@
 
 typedef struct
 {
-	uint8_t green;
-	uint8_t red;
-	uint8_t blue;
-}color_t;
-
+    uint8_t green;
+    uint8_t red;
+    uint8_t blue;
+} color_t;
 
 void led_set(uint32_t led, color_t color);
 void led_init(void);
@@ -91,18 +100,17 @@ void led_scan_tick(uint32_t src);
 color_t hsv2c(uint8_t hue, uint8_t saturation, uint8_t value);
 color_t rgb2c(uint8_t red, uint8_t green, uint8_t blue);
 
-
-//main timer
+// main timer
 void tim0_start_sr(void);
 void wait_next_48k_tick(void);
 void wait_one_sec(void);
 int32_t timer_get_value(void);
 
-//display
+// display
 void lcd_start(void);
 void lcd_scan_tick(uint32_t sr);
 
-//adc
+// adc
 void adc_start(void);
 void adc_tick(uint32_t sr);
 extern volatile uint16_t adc_pitchwheel;
@@ -110,15 +118,15 @@ extern volatile uint16_t adc_modwheel;
 extern volatile uint16_t adc_knob[8];
 extern volatile uint16_t adc_pad[16];
 
-//keys
+// keys
 void controls_tick(uint32_t sr);
 
-//midi
+// midi
 void cc_write(uint16_t cc);
 void midi_test_check(void);
 void midi_start(void);
 
-//usb
+// usb
 void usbmidiTap(void);
 
 #endif // ORCA_H_
