@@ -4,7 +4,7 @@
 volatile uint32_t start;
 volatile uint32_t stop;
 
-void adc_start()
+void adcInit()
 {
     PA->DOUT = 0;
     // clk: adc source: 12MHz, div2
@@ -32,8 +32,9 @@ volatile uint16_t adc_pad[16];
 
 #define PAD_THRSH (0x400 - 64)
 
-void adc_tick(uint32_t sr)
+void adcSrTap(uint32_t sr, uint32_t lcg)
 {
+    // TODO: division ????
     if ((sr & 0x3) != 0)
         return;
     else {
@@ -43,9 +44,6 @@ void adc_tick(uint32_t sr)
             while (1)
                 ;
         PA->DOUT = (sr + 1) << 12;
-
-        static int32_t lcg = 0;
-        lcg = lcg * 0x41C64E6D + 0x3039;
 
         int32_t pitch = (int16_t)ADC->ADDR[0];
         if (pitch < SENSOR_ACTIVE_THRSH)

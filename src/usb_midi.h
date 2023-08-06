@@ -15,7 +15,10 @@ void usbmidiEndpointsInit(void);
 uint32_t usbmidiOutSend(uint32_t message);
 uint32_t usbmidiInReceive(uint32_t* message);
 void usbmidiOutCC(uint16_t control);
-void usbmidiTap(void);
-void usbmidiStart(void);
+void usbVirtInterrupt(void);
+void usbDubegLoopback(void);
+
+void usbStart(void);
+void usbMainTap(void);
 
 #endif // _USB_MIDI_H

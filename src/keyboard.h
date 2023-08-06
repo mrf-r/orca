@@ -20,10 +20,9 @@ typedef enum {
     BUTTONS_TOTAL,
 } ButtonsEn;
 
-
 uint8_t kbdOctaveGet(void);
 void kbdOctaveSet(uint8_t octave);
 void kbdInit(void);
-void kbdTap(uint32_t sr);
+void kbdSrTap(uint32_t sr);
 
 #endif // _KEYBOARD_H

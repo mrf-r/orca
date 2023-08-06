@@ -1,7 +1,8 @@
+#include "orca.h"
 #include "usb_midi.h"
 #include "system_dbgout.h"
 
-/* 
+/*
 TODO:
 - connection status, empty buffer on disconnect
 - host read timeout, empty on inactive receiver
@@ -51,46 +52,34 @@ void usbmidiEndpointsInit(void)
     USBD_CONFIG_EP(EP3, USBD_CFG_EPMODE_IN | (USB_MIDI_EP_IN & 0x7));
     USBD_SET_EP_BUF_ADDR(EP3, EP3_BUF_BASE);
     USBD_SET_PAYLOAD_LEN(EP3, USB_MIDI_EP_IN_MAXPACKETSIZE);
-
-    /*
-    СЕЙЧАС ГЛАВНОЕ ЭТО ЮСБ потому что ты заебал
-
-     + проверить ин аут кто есть кто я хз не помню
-     + проверить соответствие кабеля и порта и нахер вообще кабельнумбер нужен
-     сделать в первую очередь прием сообщений из хоста
-     проверить блокировку, ограничивая размер ендпоинта
-     проверить выдачу и надежность выдачи, потери в хосте
-     проверить лупбэк с хоста какого-нибудь сисекса нивзъебенных размеров
-     и его скорость конечнно-же
-    */
 }
 
 #define UMI_BUF_SIZE 32
 static uint32_t umi_buf[UMI_BUF_SIZE];
 static uint32_t umi_wp = 0;
 static uint32_t umi_rp = 0;
-static uint32_t umi_ep_unprocessed = 0;
+static uint32_t umi_ep_received = 0;
 
 #define UMO_BUF_SIZE 32
 static uint32_t umo_buf[UMO_BUF_SIZE];
 static uint32_t umo_wp = 0;
 static uint32_t umo_rp = 0;
-static uint32_t umo_ep_proc = 0;
+static uint32_t umo_ep_sent = 0;
 
 // check available buffer space and copy endpoint data or do nothing (wait)
 static void usbmidiCopyInFromEp()
 {
-    if (((umi_rp - umi_wp - 1) & (UMI_BUF_SIZE - 1)) > umi_ep_unprocessed) {
+    if (((umi_rp - umi_wp - 1) & (UMI_BUF_SIZE - 1)) > umi_ep_received) {
         // read from endpoint to input buffer
         uint32_t* src = (uint32_t*)(USBD_BUF_BASE + EP2_BUF_BASE);
-        for (int i = 0; i < umi_ep_unprocessed; i++) {
+        for (int i = 0; i < umi_ep_received; i++) {
             // umi_buf[umi_wp] = src[i];
             USBD_MemCopy((uint8_t*)&umi_buf[umi_wp], (uint8_t*)&src[i], 4);
             umi_wp = (umi_wp + 1) & (UMI_BUF_SIZE - 1);
             counter_usbd_received++;
         }
         // prepare for next data reception
-        umi_ep_unprocessed = 0;
+        umi_ep_received = 0;
         USBD_SET_PAYLOAD_LEN(2, USB_MIDI_EP_IN_MAXPACKETSIZE);
     } // else do nothing, keep ep ram untouched
 }
@@ -98,18 +87,18 @@ static void usbmidiCopyInFromEp()
 static void usbmidiCopyOutToEp()
 {
     uint32_t* dst = (uint32_t*)(USBD_BUF_BASE + EP3_BUF_BASE);
-    umo_ep_proc = 0;
+    umo_ep_sent = 0;
     while ((umo_rp != umo_wp)
-        && (umo_ep_proc < (USB_MIDI_EP_OUT_MAXPACKETSIZE / 4))) {
-        // dst[umo_ep_proc] = umo_buf[umo_rp];
-        USBD_MemCopy((uint8_t*)&dst[umo_ep_proc], (uint8_t*)&umo_buf[umo_rp], 4);
+        && (umo_ep_sent < (USB_MIDI_EP_OUT_MAXPACKETSIZE / 4))) {
+        // dst[umo_ep_sent] = umo_buf[umo_rp];
+        USBD_MemCopy((uint8_t*)&dst[umo_ep_sent], (uint8_t*)&umo_buf[umo_rp], 4);
         umo_rp = (umo_rp + 1) & (UMO_BUF_SIZE - 1);
-        umo_ep_proc++;
+        umo_ep_sent++;
         counter_usbd_transmitted++;
     }
     // validate EP
-    if (umo_ep_proc)
-        USBD_SET_PAYLOAD_LEN(3, umo_ep_proc * 4);
+    if (umo_ep_sent)
+        USBD_SET_PAYLOAD_LEN(3, umo_ep_sent * 4);
 }
 
 void USBD_IRQHandler(void)
@@ -120,7 +109,7 @@ void USBD_IRQHandler(void)
     // debug stuff
     if (!u32IntSts)
         return;
-    #warning "check irq count"
+#warning "check irq count"
     // print_s("\n");
     // print_d32(counter_usbd_irq);
     // print_s(" int:");
@@ -193,7 +182,7 @@ void USBD_IRQHandler(void)
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP2);
             // 0x01 HOST OUT -> DEVICE IN
             // EP2_Handler();
-            umi_ep_unprocessed = USBD_GET_PAYLOAD_LEN(2) / 4;
+            umi_ep_received = USBD_GET_PAYLOAD_LEN(2) / 4;
             usbmidiCopyInFromEp();
         }
         if (u32IntSts & USBD_INTSTS_EP3) {
@@ -233,12 +222,12 @@ uint32_t usbmidiOutGetFree()
 }
 uint32_t usbmidiOutSend(uint32_t message)
 {
-    uint32_t ret = -1;
+    uint32_t ret = 0;
     USB_IRQ_DISABLE();
     if (((umo_rp - umo_wp - 1) & (UMO_BUF_SIZE - 1)) > 1) {
         umo_buf[umo_wp] = message;
         umo_wp = (umo_wp + 1) & (UMO_BUF_SIZE - 1);
-        ret = 0;
+        ret = 1;
     }
     USB_IRQ_ENABLE();
     return ret;
@@ -266,37 +255,64 @@ void usbmidiOutCC(uint16_t control)
     USB_IRQ_ENABLE();
 }
 
-void usbmidiTap()
+void usbVirtInterrupt()
 {
-    // debug polling
-    USBD_IRQHandler();
+    /*
+    TODO
+     + проверить соответствие кабеля и порта и нахер вообще кабельнумбер нужен
+     проверить блокировку, ограничивая размер ендпоинта
+     проверить лупбэк с хоста какого-нибудь сисекса нивзъебенных размеров
+     и его скорость конечнно-же
 
-    // debug loopback - one message per iteration??
-copy_another:
-    if (umi_rp != umi_wp) {
-        if (usbmidiOutSend(umi_buf[umi_rp]) == 0) {
-            umi_rp = (umi_rp + 1) & (UMI_BUF_SIZE - 1);
-            goto copy_another;
-        }
-    }
-    // in check
-    if (umi_ep_unprocessed) {
-        USB_IRQ_DISABLE();
-        usbmidiCopyInFromEp();
-        USB_IRQ_ENABLE();
-    }
-    // out check
-    if (umo_ep_proc == 0) {
-        USB_IRQ_DISABLE();
-        usbmidiCopyOutToEp();
-        USB_IRQ_ENABLE();
-    }
+    */
+    // debug polling
+    if (NVIC_GetPendingIRQ(USBD_IRQn))
+        USBD_IRQHandler();
+    ASSERT(NVIC_GetPendingIRQ(USBD_IRQn) == 0);
 }
 
-void usbmidiStart()
+void usbDubegLoopback()
+{
+    // debug loopback - one message per iteration??
+    static uint8_t not_empty = 0;
+    static uint32_t m;
+    do {
+        if (not_empty) {
+            if (usbmidiOutSend(m))
+                not_empty = 0;
+            else
+                return;
+        } else {
+            not_empty = usbmidiInReceive(&m);
+        }
+    } while (not_empty);
+
+    // copy_another:
+    //     if (umi_rp != umi_wp) {
+    //         if (usbmidiOutSend(umi_buf[umi_rp]) == 0) {
+    //             umi_rp = (umi_rp + 1) & (UMI_BUF_SIZE - 1);
+    //             goto copy_another;
+    //         }
+    //     }
+}
+
+void usbMainTap()
+{
+    USB_IRQ_DISABLE();
+    if (umi_ep_received) {
+        usbmidiCopyInFromEp();
+    }
+    if (umo_ep_sent == 0) {
+        usbmidiCopyOutToEp();
+    }
+    USB_IRQ_ENABLE();
+}
+
+void usbStart()
 {
     USBD_Open(&usb_descriptors, NULL, NULL);
     usbmidiEndpointsInit();
     USBD_Start();
+    NVIC_SetPriority(USBD_IRQn, IRQ_PRIORITY_USB);
     // NVIC_EnableIRQ(USBD_IRQn);
 }

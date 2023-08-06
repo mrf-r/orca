@@ -53,13 +53,13 @@ const uint16_t monitor_commands_count = sizeof(monitor_commands)/sizeof(CliComma
 //////////////////////////////////////////////////////////////////////////////////////////
 
 extern uint32_t lcg;
-extern uint32_t sr_counter;
+extern volatile uint32_t counter_sr;
 extern uint32_t cr_counter;
 extern uint32_t fractional_period;
 
 CliVariable monitor_variables[] = {
     CLI_VAR_RO32(lcg),
-    CLI_VAR_RO32(sr_counter),
+    CLI_VAR_RO32(counter_sr),
     CLI_VAR_RO32(cr_counter),
     CLI_VAR_RO32(fractional_period),
 };

@@ -1,4 +1,4 @@
-
+#include "orca.h"
 #include "monochrome_graphic_lib.h"
 #define lcd_framebuffer mgl_framebuffer
 
@@ -94,6 +94,25 @@ void lcd_update_line(uint32_t sr)
     lcd_send(&lcd_framebuffer[128 * line], 128, SSD1306_I2CMODE_STREAM_DAT);
 }
 
+void lcdUpdate()
+{
+    uint8_t setadr[4] = { SSD1306_I2CMODE_STREAM_CMD, 0xB0, 0x00, 0x10 };
+    for (int i = 0; i < 8; i++) {
+        setadr[0] = 0xB0 | i;
+        i2cTransaction(SSD1306_I2C_ADDRESS, setadr, 3, 0, 0);
+        i2cTransaction(SSD1306_I2C_ADDRESS, lcd_framebuffer, 3, 0, 0);
+    }
+
+    // lcd_mode = SSD1306_I2CMODE_STREAM_CMD;
+    lcd_send(setadr, 3, SSD1306_I2CMODE_STREAM_CMD);
+    lcd_send(setadr, 3, SSD1306_I2CMODE_STREAM_CMD);
+    lcd_send(setadr, 3, SSD1306_I2CMODE_STREAM_CMD);
+    // lcd_mode = SSD1306_I2CMODE_STREAM_DAT;
+    lcd_send(&lcd_framebuffer[128 * line], 128, SSD1306_I2CMODE_STREAM_DAT);
+    i2cTransaction(SSD1306_I2C_ADDRESS,
+        se)
+}
+
 // pseudo-update
 extern uint8_t buttons_state[10];
 extern volatile int32_t adc_pitchwheel;
@@ -178,46 +197,45 @@ extern uint8_t lastvelo;
 extern uint16_t kbd_rawvelo;
 extern uint16_t buttons;
 
-void lcd_scan_tick(uint32_t sr)
+void lcd_scan_tick()
 // matrix scan
 {
-    if ((sr & 0xFF) == 0) {
-        mgl_fill(MGL_COLOR_LOW);
+    mgl_fill(MGL_COLOR_LOW);
 
-        for (int i = 0; i < 8; i++) {
-            mgl_setcursor(0, 8 * i);
-            if (buttons_state[i] != 0xFF)
-                mgl_hexvalue16(buttons_state[i]);
-        }
-        mgl_setcursor(32, 0);
-        if (buttons_state[8] != 0xFF)
-            mgl_hexvalue16(buttons_state[8]);
-        mgl_setcursor(32, 8);
-        if (buttons_state[9] != 0xFF)
-            mgl_hexvalue16(buttons_state[9]);
-
-        mgl_setcursor(32, 16);
-        mgl_hexvalue16(lastkey);
-        mgl_setcursor(32, 24);
-        mgl_hexvalue16(lastvelo);
-        mgl_setcursor(32, 32);
-        mgl_hexvalue16(kbd_rawvelo);
-        mgl_setcursor(32, 40);
-        mgl_hexvalue16(buttons);
-
-        mgl_setcursor(96, 48);
-        mgl_hexvalue16(timeslot);
-        mgl_setcursor(96, 56);
-        mgl_hexvalue16(timeslot_max--);
-        lcd_update_line(sr);
+    for (int i = 0; i < 8; i++) {
+        mgl_setcursor(0, 8 * i);
+        if (buttons_state[i] != 0xFF)
+            mgl_hexvalue16(buttons_state[i]);
     }
+    mgl_setcursor(32, 0);
+    if (buttons_state[8] != 0xFF)
+        mgl_hexvalue16(buttons_state[8]);
+    mgl_setcursor(32, 8);
+    if (buttons_state[9] != 0xFF)
+        mgl_hexvalue16(buttons_state[9]);
+
+    mgl_setcursor(32, 16);
+    mgl_hexvalue16(lastkey);
+    mgl_setcursor(32, 24);
+    mgl_hexvalue16(lastvelo);
+    mgl_setcursor(32, 32);
+    mgl_hexvalue16(kbd_rawvelo);
+    mgl_setcursor(32, 40);
+    mgl_hexvalue16(buttons);
+
+    mgl_setcursor(96, 48);
+    mgl_hexvalue16(timeslot);
+    mgl_setcursor(96, 56);
+    mgl_hexvalue16(timeslot_max--);
+    lcd_update_line(sr);
 }
 
 void lcd_start()
 {
+
     // init i2c interface
-    I2C0->I2CLK = 17; // 17 - set to 1 MHz or 44 - to 400kHz, 89 for something slow
-    I2C0->I2CON = I2C_I2CON_ENS1_Msk;
+    // I2C0->I2CLK = 17; // 17 - set to 1 MHz or 44 - to 400kHz, 89 for something slow
+    // I2C0->I2CON = I2C_I2CON_ENS1_Msk;
     //
     // lcd_mode = SSD1306_I2CMODE_STREAM_CMD;
     lcd_send((uint8_t*)lcd_init_sequence, sizeof(lcd_init_sequence), SSD1306_I2CMODE_STREAM_CMD);

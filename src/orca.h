@@ -16,6 +16,23 @@
 #endif
 
 /*
+roadmap:
+i2c multimaster unblocking polling
+stable clock with timeslot assertion
+usb midi keyboard and cc
+pots lock
+basic menu (Neutron approach?)
+midi PC, Bank change from menu
+HW MOD - EEPROM???? it is against the rules, can we emulate it??
+as we got clock and midi, let's add arp and chords (srsly??) and hold
+basic sequencer
+=====
+keys are for each channel
+PADS contain few events (any midi trigs or notes)
+PADS are global (each event contain own channel)
+DIALS are global
+.....
+====
 нужно инитить стек при загрузке в ОЗУ
 нужно понять как там правильно грузить в флеш
 автоматизировать файл
@@ -81,11 +98,15 @@
 */
 
 #define IRQ_PRIORITY_TIMER_SR 0x0
-#define IRQ_PRIORITY_UART_MIDI 0x1
+// midi priority domain,
+// probably it is better to keep
+// it as simple as possible,
+// same priorities, no preemption
+#define IRQ_PRIORITY_UART_MIDI 0x2
 #define IRQ_PRIORITY_USB 0x2
-#define IRQ_PRIORITY_I2C 0x3
+#define IRQ_PRIORITY_I2C 0x2
 
-#define SAMPLE_RATE 96000
+#define SAMPLE_RATE 48000
 
 typedef struct
 {
@@ -94,39 +115,46 @@ typedef struct
     uint8_t blue;
 } color_t;
 
-void led_set(uint32_t led, color_t color);
-void led_init(void);
-void led_scan_tick(uint32_t src);
+void criticalLoop(void);
+
+void ledIntensitySet(uint8_t value);
+void ledSet(uint32_t led, color_t color);
+void ledInit(void);
+void ledSrTap(uint32_t tick, uint32_t lcg);
 color_t hsv2c(uint8_t hue, uint8_t saturation, uint8_t value);
 color_t rgb2c(uint8_t red, uint8_t green, uint8_t blue);
 
 // main timer
-void tim0_start_sr(void);
-void wait_next_48k_tick(void);
-void wait_one_sec(void);
-int32_t timer_get_value(void);
+void timerSrStart(void);
+void srVirtInterrupt(void);
+int32_t timerSrGetValue(void);
+void tim1Init(void);
+uint32_t tim1Get24bitVal(void);
+uint32_t tim1GetDelta(void);
+extern volatile uint32_t counter_sr;
 
 // display
 void lcd_start(void);
-void lcd_scan_tick(uint32_t sr);
+void lcd_scan_tick(void);
+void i2cStart(void);
+void i2cVirtInterrupt(void);
+uint32_t i2cTransaction(uint8_t addr, uint8_t* tx_buffer, uint16_t tx_len, uint8_t* rx_buffer, uint16_t rx_len);
 
 // adc
-void adc_start(void);
-void adc_tick(uint32_t sr);
+void adcInit(void);
+void adcSrTap(uint32_t sr, uint32_t lcg);
 extern volatile uint16_t adc_pitchwheel;
 extern volatile uint16_t adc_modwheel;
 extern volatile uint16_t adc_knob[8];
 extern volatile uint16_t adc_pad[16];
 
-// keys
-void controls_tick(uint32_t sr);
 
 // midi
 void cc_write(uint16_t cc);
-void midi_test_check(void);
-void midi_start(void);
+void uartVirtInterrupt(void);
+void uartStart(void);
 
 // usb
-void usbmidiTap(void);
+void usbVirtInterrupt(void);
 
 #endif // ORCA_H_

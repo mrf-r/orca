@@ -40,7 +40,7 @@ void kbdInit()
 /*
 one point hyperbola
 only saturation can be set
-minimal timer value for max velocity 
+minimal timer value for max velocity
 KBD_REC_SCALE is fixed at 16002
 to keep all possible velocity levels
 */
@@ -77,18 +77,18 @@ __attribute__((weak)) void keyButton(uint8_t button, uint8_t press)
 }
 // TODO: unglobal
 
-#define CODEBLOCK_kbdnoteon(key)                                        \
-    {                                                                   \
-        int32_t vrawv = /* KBD_REC_SCALE / kbd_state[key].counter */ 0; \
-        uint8_t velocity = vrawv > 127 ? 127 : vrawv;                   \
-        keyPress(kbd_state[key].note, velocity);                        \
+#define CODEBLOCK_kbdnoteon(key)                                \
+    {                                                           \
+        int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
+        uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
+        keyPress(kbd_state[key].note, velocity);                \
     }
 
-#define CODEBLOCK_kbdnoteoff(key)                                       \
-    {                                                                   \
-        int32_t vrawv = /* KBD_REC_SCALE / kbd_state[key].counter */ 0; \
-        uint8_t velocity = vrawv > 127 ? 127 : vrawv;                   \
-        keyRelease(kbd_state[key].note, velocity);                      \
+#define CODEBLOCK_kbdnoteoff(key)                               \
+    {                                                           \
+        int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
+        uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
+        keyRelease(kbd_state[key].note, velocity);              \
     }
 
 // set state
@@ -296,7 +296,7 @@ static void (*const hkrr[16])() = {
     hkRow15, // R -      P BUT 0..3
 }
 */
-void kbdTap(uint32_t sr)
+void kbdSrTap(uint32_t sr)
 {
     uint32_t pos = sr & 0xF;
     // read current

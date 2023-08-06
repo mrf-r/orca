@@ -1,6 +1,8 @@
 {
     "C_Cpp.clang_format_fallbackStyle": "WebKit",
     "files.exclude": {
+        "unversioned/": true,
+        
         "**/.git": true,
         "**/.svn": true,
         "**/.hg": true,
