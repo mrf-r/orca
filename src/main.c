@@ -27,6 +27,16 @@ void criticalLoop()
     usbDubegLoopback();
 }
 
+void delayMs(uint32_t ms) {
+    uint32_t end_sr = counter_sr + ms * 1000 / SAMPLE_RATE;
+    while (counter_sr > end_sr) {
+        criticalLoop();
+    }
+    while (counter_sr < end_sr) {
+        criticalLoop();
+    }
+}
+
 static inline void mainLoop()
 {
     criticalLoop();

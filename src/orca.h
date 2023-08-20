@@ -2,6 +2,7 @@
 #define ORCA_H_
 
 #include <stdint.h>
+#include "i2c.h"
 
 // oversimplified assertion
 #if DEBUG == 1
@@ -116,6 +117,7 @@ typedef struct
 } color_t;
 
 void criticalLoop(void);
+void delayMs(uint32_t ms);
 
 void ledIntensitySet(uint8_t value);
 void ledSet(uint32_t led, color_t color);
@@ -136,9 +138,6 @@ extern volatile uint32_t counter_sr;
 // display
 void lcd_start(void);
 void lcd_scan_tick(void);
-void i2cStart(void);
-void i2cVirtInterrupt(void);
-uint32_t i2cTransaction(uint8_t addr, uint8_t* tx_buffer, uint16_t tx_len, uint8_t* rx_buffer, uint16_t rx_len);
 
 // adc
 void adcInit(void);

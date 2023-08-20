@@ -2,6 +2,11 @@
 #include "monochrome_graphic_lib.h"
 #define lcd_framebuffer mgl_framebuffer
 
+/*
+lcd update:
+128 * 8 bytes = 1024
+0.0256 s - 40 fps
+*/
 #include "NUC123.h"
 #define SSD1306_I2C_ADDRESS 0x78
 
@@ -31,9 +36,9 @@ static const uint8_t lcd_init_sequence[] = {
     0xAF // SSD1306_DISPLAYON
 };
 
-// static uint8_t lcd_mode;
 
-// static uint8_t lcd_framebuffer[128 * 64 / 8];
+
+
 
 uint32_t lcd_send(uint8_t* buf, uint32_t length, uint8_t lcd_mode)
 {
@@ -232,13 +237,29 @@ void lcd_scan_tick()
 
 void lcd_start()
 {
+    i2cStart(); TODO: check
+    i2cTransaction lcd_init_tr = {
+        status = 0,
+        address = SSD1306_I2C_ADDRESS,
+        len = sizeof(lcd_init_sequence),
+        data = lcd_init_sequence
+    };
+
+    while (lcd_init_tr.status & ITS_COMPLETE) {
+        lcd_init_tr.status = 0;
+        i2cMasterTransaction(&lcd_init_tr, 0, 0, 0);
+        delay(1);
+    }
+
+
 
     // init i2c interface
     // I2C0->I2CLK = 17; // 17 - set to 1 MHz or 44 - to 400kHz, 89 for something slow
     // I2C0->I2CON = I2C_I2CON_ENS1_Msk;
     //
     // lcd_mode = SSD1306_I2CMODE_STREAM_CMD;
-    lcd_send((uint8_t*)lcd_init_sequence, sizeof(lcd_init_sequence), SSD1306_I2CMODE_STREAM_CMD);
+
+    // lcd_send((uint8_t*)lcd_init_sequence, sizeof(lcd_init_sequence), SSD1306_I2CMODE_STREAM_CMD);
 
     /*
     // fill framebuffer
