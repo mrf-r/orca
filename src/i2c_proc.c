@@ -1,7 +1,8 @@
-#include "orca.h"
+#include "i2c_proc.h"
 #include "NUC123.h"
 #include "i2c.h"
-#include "i2c_proc.h"
+#include "orca.h"
+
 /*
 
 MIDI HAS VARIABLE LENGTH MESSAGES
@@ -42,32 +43,33 @@ TODO: check all transaction statuses (complete, etc)
 TODO: probably change handler
 
 */
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 // local config
 
+// amount of 32bit messages to receive or transmit
+#define I2C_MIDI_BLOCK_SIZE 8
+
 #define I2C_ATOMIC_START() __disable_irq()
 #define I2C_ATOMIC_END() __enable_irq()
-extern volatile uint32_t counter_sr;
-#define I2C_TIME_GET() (counter_sr)
-#define I2C_TIMEOUT ((400000 / 10 + SAMPLE_RATE - 1) / SAMPLE_RATE + 2)
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t itm_status;
-static uint32_t itm_timeout;
+static uint8_t i2c_current_mode;
+static uint32_t i2c_last_event_time;
+static bool i2c_last_role_was_master;
 
 // master transactions
 static uint8_t* itsm_wp; // write pointer
 static uint8_t* itsm_we; // write end
 static uint8_t* itsm_rp; // read pointer
 static uint8_t* itsm_re; // read end
-static I2CTransaction *itsm_wtr;
-static I2CTransaction *itsm_rtr;
-static I2cCallback itsm_wcb;
-static I2cCallback itsm_rcb;
+static I2CTransaction* itsm_wtr;
+static I2CTransaction* itsm_rtr;
 // next or previous, depending on a pov
 static uint8_t* itsmr_nd = 0; // receiver next data
 static uint8_t itsmr_ns; // receiver next status
@@ -78,33 +80,36 @@ static uint8_t* itss_wp;
 static uint8_t* itss_we;
 static uint8_t* itss_re;
 static uint8_t* itss_rp;
-static I2CTransaction *itss_wtr;
-static I2CTransaction *itss_rtr;
-static I2cCallback itss_wcb;
-static I2cCallback itss_rcb;
+static I2CTransaction* itss_wtr;
+static I2CTransaction* itss_rtr;
 
-static inline void itsm_w_refresh() {
+// buffer handling
+static inline void itsm_w_refresh()
+{
     itsm_wp = (uint8_t*)itsm_wtr->data;
     itsm_we = itsm_wp + itsm_wtr->len;
     ASSERT(itsm_wtr->status == 0);
     ASSERT(itsm_wp);
     ASSERT(itsm_we > itsm_wp);
 }
-static inline void itsm_r_refresh() {
+static inline void itsm_r_refresh()
+{
     itsm_rp = (uint8_t*)itsm_rtr->data;
     itsm_re = itsm_rp + itsm_rtr->len;
     ASSERT(itsm_rtr->status == 0);
     ASSERT(itsm_rp);
     ASSERT(itsm_re > itsm_rp);
 }
-static inline void itss_w_refresh() {
+static inline void itss_w_refresh()
+{
     itss_wp = (uint8_t*)itss_wtr->data;
     itss_we = itss_wp + itss_wtr->len;
     ASSERT(itss_wtr->status == 0);
     ASSERT(itss_wp);
     ASSERT(itss_we > itss_wp);
 }
-static inline void itss_r_refresh() {
+static inline void itss_r_refresh()
+{
     itss_rp = (uint8_t*)itss_rtr->data;
     itss_re = itss_rp + itss_rtr->len;
     ASSERT(itss_rtr->status == 0);
@@ -112,46 +117,47 @@ static inline void itss_r_refresh() {
     ASSERT(itss_re > itss_rp);
 }
 
-void i2cStart(uint8_t own_address) {
+void i2cStart(uint8_t own_address)
+{
     I2C0->I2CLK = 17; // 17 - set to 1 MHz or 44 - to 400kHz, 89 for something slow
     I2C0->I2CON = I2C_I2CON_ENS1_Msk;
 
     I2C0->I2CADDR0 = own_address;
-    // I2C0->I2CTOC = I2C_I2CTOC_ENTI_Msk;
+    // I2C0->I2CTOC = I2C_I2CTOC_ENTI_Msk; // timeout ?
     I2C0->I2CON |= I2C_I2CON_EI_Msk;
     NVIC_SetPriority(I2C0_IRQn, IRQ_PRIORITY_I2C);
-    // NVIC_EnableIRQ(I2C0_IRQn);
+#if IRQ_DISABLE == 0
+    NVIC_EnableIRQ(I2C0_IRQn);
+#endif
 }
 
-int i2cMasterTransaction(I2CTransaction *wtr, I2CTransaction *rtr, I2cCallback wcb, I2cCallback rcb) {
-    ASSERT((wtr && rtr) ? (wtr->address == (rtr->address & 1)) : TRUE);
+int i2cMasterTransaction(I2CTransaction* wtr, I2CTransaction* rtr)
+{
+    ASSERT((wtr && rtr) ? (wtr->address == (rtr->address & 1)) : true);
     int ret = I2C_BUSY;
     I2C_ATOMIC_START();
     // TODO return inside atomic
-    if (itm_status == ITM_FREE) {
+    if (i2c_current_mode == I2C_MODE_FREE) {
         itsm_wtr = wtr;
-        itsm_wcb = wcb;
         itsm_rtr = rtr;
-        itsm_rcb = rcb;
         // start
         I2C0->I2CON |= I2C_I2CON_STA_SI;
-        itm_status = ITM_UNCERTAIN;
+        i2c_current_mode = I2C_MODE_UNCERTAIN;
         ret = I2C_OK;
     }
     I2C_ATOMIC_END();
     return ret;
 }
 
-int i2cSlaveSetup(I2CTransaction *rtr, I2cCallback rcb, I2CTransaction *wtr, I2cCallback wcb) {
+int i2cSlaveSetup(I2CTransaction* rtr, I2CTransaction* wtr)
+{
     int ret = I2C_BUSY;
 
     I2C_ATOMIC_START();
     // TODO return inside atomic
-    if (itm_status == ITM_FREE) {
+    if (i2c_current_mode == I2C_MODE_FREE) {
         itss_rtr = rtr;
-        itss_rcb = rcb;
         itss_r_refresh();
-        itss_wcb = wcb;
         itss_wtr = wtr;
         itss_w_refresh();
         ret = I2C_OK;
@@ -164,35 +170,38 @@ int i2cSlaveSetup(I2CTransaction *rtr, I2cCallback rcb, I2CTransaction *wtr, I2c
 // master transmit
 
 // start or restart set
-static uint8_t ista_08_10() {
+static uint8_t ista_08_10()
+{
+    i2c_last_role_was_master = true;
     if (itsm_wtr) {
         itsm_w_refresh();
         itsm_wtr->status |= ITS_STARTED;
         I2C0->I2CDAT = itsm_wtr->address;
-        itm_status = ITM_MASTER_TRANSMITTER;
+        i2c_current_mode = I2C_MODE_MASTER_TRANSMITTER;
         return I2C_I2CON_SI_AA;
     } else if (itsm_rtr) {
         itsm_r_refresh();
         I2C0->I2CDAT = itsm_rtr->address;
         itsm_rtr->status |= ITS_STARTED;
-        itm_status = ITM_MASTER_RECEIVER;
+        i2c_current_mode = I2C_MODE_MASTER_RECEIVER;
         return I2C_I2CON_SI_AA;
     } else {
-        itm_status &= ~I2C_BUSY;
+        i2c_current_mode &= ~I2C_BUSY;
         return I2C_I2CON_STO_SI_AA;
     }
 }
 
 // addr or data ack
-static uint8_t ista_18_28() {
+static uint8_t ista_18_28()
+{
     if (itsm_wp < itsm_we) {
         I2C0->I2CDAT = *itsm_wp;
         itsm_wp++;
         return I2C_I2CON_SI_AA;
     } else {
         itsm_wtr->status |= ITS_COMPLETE;
-        if (itsm_wcb) {
-            itsm_wtr = itsm_wcb();
+        if (itsm_wtr->complete_callback) {
+            itsm_wtr = itsm_wtr->complete_callback();
             if (itsm_wtr) {
                 itsm_w_refresh();
                 I2C0->I2CDAT = *itsm_wp;
@@ -206,28 +215,31 @@ static uint8_t ista_18_28() {
         if (itsm_rtr) {
             return I2C_I2CON_STA_STO_SI_AA;
         } else {
-            itm_status = ITM_FREE;
+            i2c_current_mode = I2C_MODE_FREE;
             return I2C_I2CON_STO_SI_AA;
         }
     }
 }
 
-// addr or data nack 
-static uint8_t ista_20_30() {
+// addr or data nack
+static uint8_t ista_20_30()
+{
     itsm_wtr->status |= ITS_NACK;
-    itm_status = ITM_FREE;
+    i2c_current_mode = I2C_MODE_FREE;
     return I2C_I2CON_STO_SI_AA;
 }
 
 // arlo
-static uint8_t ista_38() {
+static uint8_t ista_38()
+{
+    i2c_last_role_was_master = false;
     if (itsm_wtr) {
         itsm_wtr->status |= ITS_ARLO;
     }
     if (itsm_rtr) {
         itsm_rtr->status |= ITS_ARLO;
     }
-    itm_status = ITM_FREE;
+    i2c_current_mode = I2C_MODE_FREE;
     return I2C_I2CON_STO_SI_AA;
 }
 
@@ -235,7 +247,8 @@ static uint8_t ista_38() {
 // master receive
 
 // addr ack on receive, do nothng, wait for data
-static uint8_t ista_40() {
+static uint8_t ista_40()
+{
     ASSERT(itsm_rtr);
     itsmr_nsp = &itsm_rtr->status;
     itsmr_nd = itsm_rp;
@@ -244,8 +257,8 @@ static uint8_t ista_40() {
         itsmr_ns = ITS_STARTED;
     } else {
         itsmr_ns = ITS_COMPLETE;
-        if (itsm_rcb) {
-            itsm_rtr = itsm_rcb();
+        if (itsm_rtr->complete_callback) {
+            itsm_rtr = itsm_rtr->complete_callback();
             if (itsm_rtr) {
                 itsm_r_refresh();
                 return I2C_I2CON_SI_AA;
@@ -257,21 +270,23 @@ static uint8_t ista_40() {
 }
 
 // data ack
-static uint8_t ista_50() {
+static uint8_t ista_50()
+{
     *itsmr_nd = I2C0->I2CDAT;
     *itsmr_nsp |= itsmr_ns;
     return ista_40();
 }
 
 // addr or data nack
-static uint8_t ista_48_58() {
+static uint8_t ista_48_58()
+{
     if (itsmr_ns == ITS_COMPLETE) {
         *itsmr_nd = I2C0->I2CDAT;
         *itsmr_nsp |= itsmr_ns;
     } else {
         *itsmr_nsp |= ITS_NACK;
     }
-    itm_status = ITM_FREE;
+    i2c_current_mode = I2C_MODE_FREE;
     return I2C_I2CON_STO_SI_AA;
 }
 
@@ -282,8 +297,10 @@ uint8_t* itssr_nsp;
 uint8_t* itssr_nd;
 
 // (gc) addr ack
-static uint8_t ista_60_70() {
-    itm_status = ITM_SLAVE_RECEIVER;
+static uint8_t ista_60_70()
+{
+    i2c_current_mode = I2C_MODE_SLAVE_RECEIVER;
+    i2c_last_role_was_master = false;
     if (itss_rtr) {
         itssr_nsp = &itss_rtr->status;
         itssr_nd = itss_rp;
@@ -296,8 +313,8 @@ static uint8_t ista_60_70() {
         itssr_ns = ITS_STARTED;
     } else {
         itssr_ns = ITS_COMPLETE;
-        if (itss_rcb) {
-            itss_rtr = itss_rcb();
+        if (itss_rtr->complete_callback) {
+            itss_rtr = itss_rtr->complete_callback();
             if (itss_rtr) {
                 itss_r_refresh();
                 return I2C_I2CON_SI_AA;
@@ -312,7 +329,9 @@ static uint8_t ista_60_70() {
 }
 
 // (gc) addr arlo (from master mode)
-static uint8_t ista_68_78() {
+static uint8_t ista_68_78()
+{
+    i2c_last_role_was_master = false;
     if (itsm_wtr) {
         itsm_wtr->status |= ITS_ARLO;
     }
@@ -323,7 +342,8 @@ static uint8_t ista_68_78() {
 }
 
 // (gc) data ack
-static uint8_t ista_80_90() {
+static uint8_t ista_80_90()
+{
     if (itssr_nd) {
         *itssr_nd = I2C0->I2CDAT;
         *itssr_nsp |= itssr_ns;
@@ -335,7 +355,8 @@ static uint8_t ista_80_90() {
 }
 
 // (gc) data nack
-static uint8_t ista_88_98() {
+static uint8_t ista_88_98()
+{
     ASSERT(itssr_ns == ITS_COMPLETE);
     if (itssr_nd) {
         *itssr_nd = I2C0->I2CDAT;
@@ -344,7 +365,7 @@ static uint8_t ista_88_98() {
         uint8_t dummy = I2C0->I2CDAT;
         (void)dummy;
     }
-    itm_status = ITM_FREE;
+    i2c_current_mode = I2C_MODE_FREE;
     return I2C_I2CON_SI_AA;
 }
 
@@ -352,8 +373,10 @@ static uint8_t ista_88_98() {
 // slave transmit
 
 // addr or data ack
-static uint8_t ista_A8_B8() {
-    itm_status = ITM_SLAVE_TRANSMITER;
+static uint8_t ista_A8_B8()
+{
+    i2c_current_mode = I2C_MODE_SLAVE_TRANSMITER;
+    i2c_last_role_was_master = false;
     if (itss_wp < itss_we) {
         I2C0->I2CDAT = *itss_wp;
         itss_wp++;
@@ -363,8 +386,8 @@ static uint8_t ista_A8_B8() {
         if (itss_wtr) {
             itss_wtr->status |= ITS_COMPLETE;
         }
-        if (itss_wcb) {
-            itss_wtr = itss_wcb();
+        if (itss_wtr->complete_callback) {
+            itss_wtr = itss_wtr->complete_callback();
             if (itss_wtr) {
                 itss_w_refresh();
                 I2C0->I2CDAT = *itss_wp;
@@ -381,7 +404,9 @@ static uint8_t ista_A8_B8() {
 }
 
 // addr arlo (from master)
-static uint8_t ista_B0() {
+static uint8_t ista_B0()
+{
+    i2c_last_role_was_master = false;
     if (itsm_wtr) {
         itsm_wtr->status |= ITS_ARLO;
     }
@@ -395,7 +420,7 @@ static uint8_t ista_B0() {
 static uint8_t ista_A0_C0_C8()
 {
     // TODO: A0 ???
-    itm_status = ITM_FREE;
+    i2c_current_mode = I2C_MODE_FREE;
     return I2C_I2CON_SI_AA;
 }
 
@@ -404,14 +429,14 @@ static uint8_t ista_A0_C0_C8()
 // TODO: in both cases probably the better way is to force stop condition with GPIO
 static uint8_t ista_00() // bus error
 {
-    ASSERT(FALSE);
+    ASSERT(false);
     I2C0->I2CON = I2C_I2CON_STO_SI_AA;
     // TODO: delay ?
     return I2C_I2CON_SI_AA;
 }
 static uint8_t ista_F8() // probably timer due to stretching or just free bus
 {
-    ASSERT(FALSE);
+    ASSERT(false);
     return I2C_I2CON_SI_AA;
 }
 
@@ -452,7 +477,7 @@ static uint8_t (*const ista[32])(void) = {
 
 void I2C0_IRQHandler()
 {
-    ASSERT (I2C0->I2CON & I2C_I2CON_SI)
+    ASSERT(I2C0->I2CON & I2C_I2CON_SI)
     uint8_t status = I2C0->I2CSTATUS;
 #if DEBUG == 1
     static volatile uint32_t i2c_sta_flags = 0;
@@ -462,13 +487,82 @@ void I2C0_IRQHandler()
     uint32_t ctrl = I2C0->I2CON & 0xFFFFFFC3;
     ctrl |= ista[status >> 3]();
     I2C0->I2CON = ctrl;
-    itm_timeout = I2C_TIME_GET();
+    i2c_last_event_time = I2C_TIME_GET();
 }
 
+#if IRQ_DISABLE == 1
 void i2cVirtInterrupt()
 {
-    if (NVIC_GetPendingIRQ(I2C0_IRQn)) {
+    while (NVIC_GetPendingIRQ(I2C0_IRQn)) {
         I2C0_IRQHandler();
+        NVIC_ClearPendingIRQ(I2C0_IRQn);
     }
     ASSERT(NVIC_GetPendingIRQ(I2C0_IRQn) == 0);
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// sequencer
+
+#define I2C_BUSFREE_AFTER_SLAVE 4
+#define I2C_BUSFREE_AFTER_MASTER (I2C_BUSFREE_AFTER_SLAVE * 2)
+#define I2C_TIMEOUT (SAMPLE_RATE / 2)
+
+bool i2cSeqMain(void);
+bool i2cSeqMidi(void);
+bool i2cSeqLcd(void);
+
+static inline void busfree()
+{
+    if (i2cSeqMain())
+        return;
+    else if (i2cSeqLcd())
+        return;
+    else if (i2cSeqMidi())
+        return;
+}
+
+void i2cMidiReceiveCallback(uint32_t message)
+{
+    if (message) {
+        // todo timestamping in midi
+        (void)message;
+    }
+}
+
+extern bool i2c_last_role_was_master;
+extern uint8_t i2c_current_mode;
+extern uint32_t i2c_last_event_time;
+
+void i2cSeqTap()
+{
+    int32_t delta = I2C_TIME_GET() - i2c_last_event_time;
+
+    switch (i2c_current_mode) {
+    case I2C_MODE_FREE: {
+        int32_t delay = i2c_last_role_was_master ? I2C_BUSFREE_AFTER_MASTER : I2C_BUSFREE_AFTER_SLAVE;
+        if (delta > delay) {
+            busfree();
+        }
+    } break;
+    case I2C_MODE_MASTER_TRANSMITTER:
+    case I2C_MODE_MASTER_RECEIVER:
+        // do not stay more than current transaction length
+        // fall through
+    case I2C_MODE_UNCERTAIN:
+        // do not stay more than 2 bytes
+        // ASSERT(delta < I2C_TIMEOUT_MASTER);
+        // break;
+
+    case I2C_MODE_SLAVE_TRANSMITER:
+    case I2C_MODE_SLAVE_RECEIVER:
+        // do not stay more than I2C_MIDI_BUF_SIZE / 2
+        ASSERT(delta < I2C_TIMEOUT);
+        break;
+    default:
+        ASSERT(FALSE);
+        break;
+    }
 }

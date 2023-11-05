@@ -1,3 +1,4 @@
 unversioned/
 obj/
-src/build_signature.h
+.gdbremote
+bindto.cfg

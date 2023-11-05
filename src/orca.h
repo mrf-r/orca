@@ -1,16 +1,20 @@
 #ifndef ORCA_H_
 #define ORCA_H_
 
-#include <stdint.h>
 #include "i2c.h"
+#include <stdint.h>
 
-// oversimplified assertion
 #if DEBUG == 1
-#define ASSERT(some)  \
-    {                 \
-        if (!(some))    \
-            while (1) \
-                ;     \
+#include "system_dbgout.h"
+#define STRINGIFY_V(v) #v
+#define STRINGIFY(v) STRINGIFY_V(v)
+#define ASSERT(some)                                                              \
+    {                                                                             \
+        if (!(some)) {                                                            \
+            print_s(NEWLINE "Assert failed: " __FILE__ ": " STRINGIFY(__LINE__)); \
+            while (1)                                                             \
+                ;                                                                 \
+        }                                                                         \
     }
 #else
 #define ASSERT(...)
@@ -107,7 +111,12 @@ DIALS are global
 #define IRQ_PRIORITY_USB 0x2
 #define IRQ_PRIORITY_I2C 0x2
 
+#define IRQ_DISABLE 1
+
 #define SAMPLE_RATE 48000
+
+#define I2C_MIDI_REMOTE_ADDRESS 0x36
+#define I2C_MIDI_OWN_ADDRESS 0x32
 
 typedef struct
 {
@@ -128,32 +137,42 @@ color_t rgb2c(uint8_t red, uint8_t green, uint8_t blue);
 
 // main timer
 void timerSrStart(void);
-void srVirtInterrupt(void);
 int32_t timerSrGetValue(void);
-void tim1Init(void);
-uint32_t tim1Get24bitVal(void);
-uint32_t tim1GetDelta(void);
+void measurementTimerStart(void);
+uint32_t measurementTimerDelta(void);
 extern volatile uint32_t counter_sr;
+extern volatile uint32_t timeslot;
+extern volatile uint32_t timeslot_max;
 
-// display
-void lcd_start(void);
-void lcd_scan_tick(void);
+// DEBUG STUFF TODO
+extern uint8_t contacts[10];
+extern uint16_t buttons_finc_bmp;
+extern uint32_t keys_function;
+extern uint8_t lastkey;
+extern uint8_t lastvelo;
+extern uint16_t kbd_rawvelo;
+extern uint16_t buttons;
 
 // adc
 void adcInit(void);
 void adcSrTap(uint32_t sr, uint32_t lcg);
-extern volatile uint16_t adc_pitchwheel;
-extern volatile uint16_t adc_modwheel;
-extern volatile uint16_t adc_knob[8];
+extern volatile int16_t adc_pitchwheel;
+extern volatile int16_t adc_modwheel;
+extern volatile int16_t adc_knob[8];
 extern volatile uint16_t adc_pad[16];
 
-
 // midi
-void cc_write(uint16_t cc);
-void uartVirtInterrupt(void);
+void cc_write(uint16_t cc); // TODO debug
 void uartStart(void);
 
-// usb
+// usb in usb_midi.h
+// i2c in i2cproc.h
+
+#if IRQ_DISABLE
+void srVirtInterrupt(void);
+void uartVirtInterrupt(void);
 void usbVirtInterrupt(void);
+void i2cVirtInterrupt(void);
+#endif
 
 #endif // ORCA_H_

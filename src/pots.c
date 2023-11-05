@@ -1,5 +1,5 @@
-
 #include "NUC123.h"
+#include "orca.h"
 
 volatile uint32_t start;
 volatile uint32_t stop;
@@ -17,8 +17,8 @@ void adcInit()
     stop = TIMER0->TDR;
 }
 
-volatile int32_t adc_pitchwheel;
-volatile int32_t adc_modwheel;
+volatile int16_t adc_pitchwheel;
+volatile int16_t adc_modwheel;
 
 volatile int16_t adc_knob[8];
 volatile uint16_t adc_pad[16];
@@ -40,9 +40,8 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
     else {
         sr = sr >> 2;
         // switch to next
-        if (ADC->ADCR & ADC_ADCR_ADST_Msk)
-            while (1)
-                ;
+        ASSERT((ADC->ADCR & ADC_ADCR_ADST_Msk) == 0);
+        
         PA->DOUT = (sr + 1) << 12;
 
         int32_t pitch = (int16_t)ADC->ADDR[0];
@@ -50,26 +49,32 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
             pitch = SENSOR_CENTER;
         static int32_t flt_pitchwheel = 0;
         flt_pitchwheel += (pitch * SENSOR_FILTER - flt_pitchwheel + lcg / SENSOR_RAND_PS) / SENSOR_FILTER;
-		pitch = (flt_pitchwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
-		if (pitch < -0x1FFF) pitch = -0x1FFF;
-		else if (pitch > 0x2000) pitch = 0x2000;
-		pitch = 0x2000 - pitch;
+        pitch = (flt_pitchwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
+        if (pitch < -0x1FFF)
+            pitch = -0x1FFF;
+        else if (pitch > 0x2000)
+            pitch = 0x2000;
+        pitch = 0x2000 - pitch;
         adc_pitchwheel = pitch;
 
         int32_t mod = (int16_t)ADC->ADDR[1];
         if (mod > SENSOR_ACTIVE_THRSH) {
-        	static int32_t flt_modwheel = 0;
+            static int32_t flt_modwheel = 0;
             flt_modwheel += (mod * SENSOR_FILTER - flt_modwheel + lcg / SENSOR_RAND_PS) / SENSOR_FILTER;
-			mod = (flt_modwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
-			if (mod < -0x1FFF) mod = -0x1FFF;
-			else if (mod > 0x2000) mod = 0x2000;
-			mod = 0x2000 - mod;
-        	adc_modwheel = mod;
+            mod = (flt_modwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
+            if (mod < -0x1FFF)
+                mod = -0x1FFF;
+            else if (mod > 0x2000)
+                mod = 0x2000;
+            mod = 0x2000 - mod;
+            adc_modwheel = mod;
         }
 
         uint32_t pos = sr & 0x7;
 
         adc_knob[pos] += (((int16_t)ADC->ADDR[3]) * 16 - adc_knob[pos] + lcg / 0x8000000) / 16;
+        ASSERT(adc_knob[pos] > 0);
+        ASSERT(adc_knob[pos] < 0x4000);
 
         adc_pad[pos] = ADC->ADDR[2];
         adc_pad[pos + 8] = ADC->ADDR[4];

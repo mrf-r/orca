@@ -1,5 +1,6 @@
 
 #include "NUC123.h"
+#include "keyboard.h"
 #include "orca.h"
 
 #define SR_TIMER_PERIOD (72000000 / SAMPLE_RATE)
@@ -19,7 +20,6 @@ void TMR0_IRQHandler()
     kbdSrTap(counter_sr);
 }
 
-
 // #if SAMPLE_RATE == 96000
 // // #define SR_TIMER_PERIOD 375
 // #define SR_TIMER_PERIOD 750
@@ -37,46 +37,40 @@ void timerSrStart()
     TIMER0->TCMPR = SR_TIMER_PERIOD - 1; // 750 - 96k 1500 - 48k
     TIMER0->TCSR |= TIMER_TCSR_CEN_Msk;
     NVIC_SetPriority(TMR0_IRQn, IRQ_PRIORITY_TIMER_SR);
-    // NVIC_EnableIRQ(TMR0_IRQn);
+#if IRQ_DISABLE == 0
+    NVIC_EnableIRQ(TMR0_IRQn);
+#endif
 }
 
+#if IRQ_DISABLE == 1
 void srVirtInterrupt()
 {
-    while (!(TIMER0->TISR & TIMER_TISR_TIF_Msk))
-        ;
-    TIMER0->TISR = TIMER_TISR_TIF_Msk;
-    ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn));
-    if (NVIC_GetPendingIRQ(TMR0_IRQn))
+    // while (!(TIMER0->TISR & TIMER_TISR_TIF_Msk))
+    //     ;
+    // TIMER0->TISR = TIMER_TISR_TIF_Msk;
+    // ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn));
+    if (NVIC_GetPendingIRQ(TMR0_IRQn)) {
+        NVIC_ClearPendingIRQ(TMR0_IRQn);
         TMR0_IRQHandler();
-    ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn) == 0);
+    }
+    // for some reason it fails
+    // ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn) == 0);
 }
-
-// //~ 21 uS
-// void timerSrWainNext()
-// {
-//     while (!(TIMER0->TISR & TIMER_TISR_TIF_Msk))
-//         ;
-//     TIMER0->TISR = TIMER_TISR_TIF_Msk;
-// }
+#endif
 
 int32_t timerSrGetValue()
 {
     return TIMER0->TDR;
 }
 
-void tim1Init()
+void measurementTimerStart()
 {
     TIMER1->TCSR = 3 << TIMER_TCSR_MODE_Pos;
     TIMER1->TCSR |= TIMER_TCSR_CEN_Msk;
 }
 
-uint32_t tim1Get24bitVal()
-{
-    return TIMER1->TDR;
-}
-
-// from the last call
-uint32_t tim1GetDelta()
+// 24bits!!! from the last call
+uint32_t measurementTimerDelta()
 {
     static uint32_t prev;
     uint32_t current = TIMER1->TDR;

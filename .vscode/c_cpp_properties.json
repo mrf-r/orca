@@ -13,8 +13,8 @@
             "defines": [
                 "DEBUG = 1"
             ],
-            // "compilerPath": "E:/__gcc/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-gcc.exe",
-            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "compilerPath": "c:/portable/framework/bin/arm-none-eabi-gcc.exe",
+            // "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "cStandard": "c99",
             "cppStandard": "c++14",
             "intelliSenseMode": "gcc-arm"

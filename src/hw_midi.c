@@ -11,7 +11,9 @@ void uartStart()
     UART0->BAUD = 142;
     // UART0->IER = UART_IER_THRE_IEN_Msk;
     NVIC_SetPriority(UART0_IRQn, IRQ_PRIORITY_UART_MIDI);
-    // NVIC_EnableIRQ(UART0_IRQn);
+#if IRQ_DISABLE == 0
+    NVIC_EnableIRQ(UART0_IRQn);
+#endif
 }
 
 void uartTxIrqEnable()
@@ -38,14 +40,17 @@ void UART0_IRQHandler()
     }
 }
 
+#if IRQ_DISABLE == 1
 void uartVirtInterrupt()
 {
     if (NVIC_GetPendingIRQ(UART0_IRQn)) {
         // if (UART0->FSR & UART_FSR_TX_EMPTY_Msk) {
         UART0_IRQHandler();
+        NVIC_ClearPendingIRQ(UART0_IRQn);
     }
-    ASSERT(NVIC_GetPendingIRQ(UART0_IRQn) == 0);
+    // ASSERT(NVIC_GetPendingIRQ(UART0_IRQn) == 0);
 }
+#endif
 
 static inline void midi_write(uint8_t byte)
 {

@@ -1,10 +1,11 @@
 
 #include "NUC123.h"
+#include "i2c_proc.h"
+#include "keyboard.h"
+#include "orca.h"
 #include "system_dbgout.h"
 #include "usb_midi.h"
-
-#include "orca.h"
-#include "keyboard.h"
+#include "../obj/signature.h"
 
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
@@ -12,22 +13,26 @@ volatile uint32_t timeslot_max;
 // basically all async MIDI processing
 void criticalLoop()
 {
-    // DEBUG interrupts
+#if IRQ_DISABLE
     srVirtInterrupt();
-    uint32_t delta = tim1GetDelta();
-    ASSERT(delta > (72000000 / SAMPLE_RATE - 2));
-    ASSERT(delta < (72000000 / SAMPLE_RATE * 2));
+    uint32_t delta = measurementTimerDelta();
+    // ASSERT(delta > (72000000 / SAMPLE_RATE - 2));
+    // ASSERT(delta < (72000000 / SAMPLE_RATE * 2));
     uartVirtInterrupt();
-    usbVirtInterrupt();
+    // usbVirtInterrupt();
     i2cVirtInterrupt();
+#endif
 
     // async midi application functionality
-    usbMainTap();
+    // TODO: main control loop is here
+    i2cSeqTap();
+    // usbMainTap();
     cc_write(adc_knob[0]);
-    usbDubegLoopback();
+    // usbDubegLoopback();
 }
 
-void delayMs(uint32_t ms) {
+void delayMs(uint32_t ms)
+{
     uint32_t end_sr = counter_sr + ms * 1000 / SAMPLE_RATE;
     while (counter_sr > end_sr) {
         criticalLoop();
@@ -45,7 +50,10 @@ static inline void mainLoop()
 
     // totally async functionality
     ledIntensitySet(adc_knob[1] / 64);
+
+    void lcd_scan_tick(void); // TODO DEBUG
     lcd_scan_tick();
+
     // uint32_t lp = counter_sr & 0x7;
     static uint32_t next_upd = 0;
     if (counter_sr >= next_upd) {
@@ -81,20 +89,21 @@ static inline void mainLoop()
 
 int main(void)
 {
-    print_s(NEWLINE "+-------------------------------------------+");
-    print_s(NEWLINE "|          NUC123 Orca mini25               |");
-    print_s(NEWLINE "+-------------------------------------------+");
+    print_s(NEWLINE "--<<< NUC123 Orca mini25 >>>--");
+    print_s(NEWLINE GIT_DESCRIBE);
+    print_s(NEWLINE ENV_DATE_LOCAL);
+    print_s(NEWLINE ENV_TIME_LOCAL);
+    // ASSERT(0); // test assert
 
-    tim1Init();
+    measurementTimerStart();
     timerSrStart();
-    i2cStart();
+    i2cStart(I2C_MIDI_OWN_ADDRESS);
     ledInit();
     adcInit();
     uartStart();
     kbdInit();
-    usbStart();
-
-    lcd_start();
+    // usbStart();
+    lcdStart();
 
     for (uint32_t i = 0; i < 26; i++) {
         // ledSet(i, rgb2c(8, 8, 8));

@@ -1,5 +1,5 @@
-#include "orca.h"
 #include "usb_midi.h"
+#include "orca.h"
 #include "system_dbgout.h"
 
 /*
@@ -255,6 +255,7 @@ void usbmidiOutCC(uint16_t control)
     USB_IRQ_ENABLE();
 }
 
+#if IRQ_DISABLE == 1
 void usbVirtInterrupt()
 {
     /*
@@ -266,10 +267,13 @@ void usbVirtInterrupt()
 
     */
     // debug polling
-    if (NVIC_GetPendingIRQ(USBD_IRQn))
+    while (NVIC_GetPendingIRQ(USBD_IRQn)) {
         USBD_IRQHandler();
+        NVIC_ClearPendingIRQ(USBD_IRQn);
+    }
     ASSERT(NVIC_GetPendingIRQ(USBD_IRQn) == 0);
 }
+#endif
 
 void usbDubegLoopback()
 {
@@ -314,5 +318,7 @@ void usbStart()
     usbmidiEndpointsInit();
     USBD_Start();
     NVIC_SetPriority(USBD_IRQn, IRQ_PRIORITY_USB);
-    // NVIC_EnableIRQ(USBD_IRQn);
+#if IRQ_DISABLE == 0
+    NVIC_EnableIRQ(USBD_IRQn);
+#endif
 }

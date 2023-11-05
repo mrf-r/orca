@@ -1,7 +1,7 @@
 #include "NUC123.h"
 
-#include "orca.h"
 #include "keyboard.h"
+#include "orca.h"
 
 #define TOTAL_ROWS 10
 
@@ -17,7 +17,7 @@ typedef struct
     uint16_t counter;
 } key_state_t;
 
-uint8_t buttons_state[TOTAL_ROWS];
+uint8_t contacts[TOTAL_ROWS];
 static key_state_t kbd_state[KBD_KEYCOUNT];
 static uint8_t kbd_octave; // 2nd octave
 static uint8_t kbd_noteshift; // 2nd octave
@@ -50,45 +50,80 @@ to keep all possible velocity levels
 #define KBD_START_VALUE (126 - KBD_MIN_VELO_TIMER)
 
 #if DEBUG == 1
+#include "system_dbgout.h"
 uint8_t lastkey;
 uint8_t lastvelo;
 uint16_t kbd_rawvelo;
 uint16_t buttons;
+uint32_t keys_function;
+uint16_t buttons_finc_bmp = (1 << BUTTON_SHIFT);
 #endif
 
 __attribute__((weak)) void keyPress(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
+    print_s(NEWLINE "key prs: ");
+    print_d8(key);
+    print_s(" ");
+    print_d8(velocity);
 }
 __attribute__((weak)) void keyRelease(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
+    print_s(NEWLINE "key rel: ");
+    print_d8(key);
+    print_s(" ");
+    print_d8(velocity);
 }
 __attribute__((weak)) void keyButton(uint8_t button, uint8_t press)
 {
     ASSERT(button < 16);
     if (press) {
         buttons |= 1 << button;
+        print_s(NEWLINE "but prs: ");
     } else {
         buttons &= ~(1 << button);
+        print_s(NEWLINE "but rel: ");
     }
+    print_d8(button);
+}
+
+__attribute__((weak)) void keyFunc(uint8_t func, uint8_t press)
+{
+    ASSERT(func < 25);
+    if (press) {
+        print_s(NEWLINE "but prs: ");
+    } else {
+        print_s(NEWLINE "but rel: ");
+    }
+    print_d8(func);
 }
 // TODO: unglobal
 
-#define CODEBLOCK_kbdnoteon(key)                                \
-    {                                                           \
-        int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
-        uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
-        keyPress(kbd_state[key].note, velocity);                \
+#define CODEBLOCK_kbdnoteon(key)                                    \
+    {                                                               \
+        if (buttons & buttons_finc_bmp) {                           \
+            keys_function |= 1 << key;                              \
+            keyFunc(key, 1);                                        \
+        } else {                                                    \
+            int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
+            uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
+            keyPress(kbd_state[key].note, velocity);                \
+        }                                                           \
     }
 
-#define CODEBLOCK_kbdnoteoff(key)                               \
-    {                                                           \
-        int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
-        uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
-        keyRelease(kbd_state[key].note, velocity);              \
+#define CODEBLOCK_kbdnoteoff(key)                                   \
+    {                                                               \
+        if (keys_function & (1 << key)) {                           \
+            keys_function &= ~(1 << key);                           \
+            keyFunc(key, 0);                                        \
+        } else {                                                    \
+            int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
+            uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
+            keyRelease(kbd_state[key].note, velocity);              \
+        }                                                           \
     }
 
 // set state
@@ -234,8 +269,8 @@ static inline void hkKeyProc(const uint8_t key)
     // custom
     uint8_t pos = (key / 8) * 2;
     uint8_t spos = key & 7;
-    uint8_t a = (buttons_state[pos] >> spos) & 1;
-    uint8_t b = (buttons_state[pos + 1] >> spos) & 1;
+    uint8_t a = (contacts[pos] >> spos) & 1;
+    uint8_t b = (contacts[pos + 1] >> spos) & 1;
     // common
     uint8_t act = kbd_state[key].state | (b << 1) | a;
     ASSERT(act < 16);
@@ -307,7 +342,7 @@ void kbdSrTap(uint32_t sr)
     // process
     if (pos < TOTAL_ROWS) {
         row = (row & 0x7F) | ((row & 0x400) >> 3);
-        buttons_state[pos] = row;
+        contacts[pos] = row;
     }
 
     // A and B sensors are in different rows
@@ -324,7 +359,7 @@ void kbdSrTap(uint32_t sr)
     } else if (pos == 0) {
         // buttons
         static uint16_t state_prev = 0;
-        uint16_t state = ~(buttons_state[8] | (buttons_state[9] << 8));
+        uint16_t state = ~(contacts[8] | (contacts[9] << 8));
         uint16_t change = state ^ state_prev;
         state_prev = state;
         for (int i = 0; i < BUTTONS_TOTAL; i++) {
