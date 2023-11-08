@@ -1,8 +1,4 @@
-MAKE_HAL:=
 
-include $(MAKE_COMMON)
-
-#######################################
 DIR_HAL := libs/StdDriver
 
 DIR_SRC_HAL := $(DIR_HAL)/src
@@ -21,7 +17,6 @@ $(DIR_HAL)/inc \
 #######################################
 FLAGS_C_HAL := $(FLAGS_C_COMMON)
 FLAGS_C_HAL += $(addprefix -I,$(DIRS_INCLUDE_HAL))
-FLAGS_C_HAL += -Ofast
 
 #######################################
 OBJECTS_HAL := $(addprefix $(DIR_OBJ)/,$(SOURCES_HAL_C:.c=.o))

@@ -15,7 +15,7 @@ void criticalLoop()
 {
 #if IRQ_DISABLE
     srVirtInterrupt();
-    uint32_t delta = measurementTimerDelta();
+    // uint32_t delta = measurementTimerDelta();
     // ASSERT(delta > (72000000 / SAMPLE_RATE - 2));
     // ASSERT(delta < (72000000 / SAMPLE_RATE * 2));
     uartVirtInterrupt();

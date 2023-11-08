@@ -1,12 +1,10 @@
-MAKE_FIRMWARE:=
-
-include $(MAKE_HAL)
-include $(MAKE_COMMON)
-include $(MAKE_CLI)
-
+include make_common.mk
+include make_hal.mk
+include make_cli.mk
 #######################################
 EXT_ASM := .S
 
+DIR_SRC := src
 DIRS_INCLUDE_FW := $(DIR_SRC) $(DIRS_INCLUDE_HAL) $(DIRS_INCLUDE_CLI)
 #DIRS_INCLUDE_FW += app
 
@@ -26,7 +24,6 @@ LDSCRIPT_FW := $(DIR_SRC)/orca_ram.ld
 #######################################
 FLAGS_C_FW := $(FLAGS_C_COMMON)
 FLAGS_C_FW += $(addprefix -I,$(DIRS_INCLUDE_FW))
-FLAGS_C_FW += -Os #-Ofast
 #FLAGS_C_FW += -std=gnu11
 FLAGS_C_FW += -Wall -Wpedantic
 
@@ -41,8 +38,8 @@ DIR_OBJ_FW := $(DIR_OBJ)/$(DIR_SRC)
 #DIRS_OBJ_BOOT := $(sort $(dir $(OBJECTS_FW)))
 
 #######################################
-#$(DIR_OBJ_FW):
-#	mkdir -p $@
+$(DIR_OBJ_FW):
+	mkdir -p $@
 
 $(DIR_OBJ_FW)/%.o: $(DIR_SRC)/%.c | $(DIR_OBJ_FW) $(BUILD_ID)
 	@echo "FW C: $(notdir $<)"
@@ -59,7 +56,7 @@ include $(wildcard $(DIR_OBJ_FW)/*.d)
 #######################################
 $(ELF_FW): $(OBJECTS_FW) $(OBJECTS_HAL) $(OBJECTS_CLI)
 	@echo "FW elf: $(notdir $@)"
-	@$(CC) $(FLAGS_LD_FW) $^ -o $@
+	@$(CPP) $(FLAGS_LD_FW) $^ -o $@
 	@$(SZ) $@
 	
 $(HEX_FW): $(ELF_FW)

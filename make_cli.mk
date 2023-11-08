@@ -1,8 +1,4 @@
-MAKE_CLI:=
 
-include $(MAKE_COMMON)
-
-#######################################
 DIR_CLI := libs/rtt
 
 DIR_SRC_CLI := $(DIR_CLI)
@@ -15,7 +11,6 @@ SOURCES_C_CLI := $(DIR_SRC_CLI)/SEGGER_RTT.c
 #######################################
 FLAGS_C_CLI := $(FLAGS_C_COMMON)
 FLAGS_C_CLI += $(addprefix -I,$(DIRS_INCLUDE_CLI))
-FLAGS_C_CLI += -Os #-Ofast
 
 #######################################
 OBJECTS_CLI := $(addprefix $(DIR_OBJ)/,$(SOURCES_C_CLI:.c=.o))
