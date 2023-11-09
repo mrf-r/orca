@@ -14,6 +14,7 @@
         "libs/": false
     },
     "files.associations": {
-        "*.h": "c"
+        "*.h": "c",
+        "*.c_": "c"
     }
 }

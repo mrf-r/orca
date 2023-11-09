@@ -472,6 +472,15 @@ void mgl_update()
 }
 */
 
+static const font_t font5 =
+{
+	(void*)fnt_5_blcd, //horiz
+	(void*)fnt_5_slcd, //vertical (sorry, doesn't have one)
+	fnt_5_width,       //width array
+	8, 8, 0x20         //pattern x, y, start char
+};
+
+
 void mgl_init()
 {
     // for rgb display

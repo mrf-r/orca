@@ -81,7 +81,4 @@ void mgl_hexvalue16(uint16_t v);
 // void mgl_update(void);
 void mgl_init(void);
 
-//extern const font_t font6; //do not work here
-extern const font_t font5;
-
 #endif // _MONOCHROME_GRAPHIC_LIB_H

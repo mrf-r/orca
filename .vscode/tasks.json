@@ -11,7 +11,7 @@
                 "command": "make firmware DEBUG=1",
             },
             "windows":{
-                "command": "wsl make firmware DEBUG=1",
+                "command": "wsl make firmware DEBUG=1 -j -O",
             },
             "presentation": {
                 "echo": true,

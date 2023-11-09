@@ -63,7 +63,7 @@ void lcdStart()
 static uint8_t lcd_update_ctrl_buff[sizeof(lcd_update_sequence)];
 static I2CTransaction i2ct_lcd_update;
 
-uint8_t lcd_framebuffer[128 * 8];
+extern uint8_t mgl_framebuffer[128 * 8];
 static uint8_t line;
 
 static I2CTransaction* lcdUpdateDataCallback()
@@ -71,7 +71,7 @@ static I2CTransaction* lcdUpdateDataCallback()
     ASSERT(i2ct_lcd_update.status & ITS_COMPLETE);
     i2ct_lcd_update.status = 0;
     i2ct_lcd_update.len = 128;
-    i2ct_lcd_update.data = &lcd_framebuffer[128 * line];
+    i2ct_lcd_update.data = &mgl_framebuffer[128 * line];
     i2ct_lcd_update.complete_callback = 0;
     return &i2ct_lcd_update;
 }

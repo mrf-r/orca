@@ -7,6 +7,7 @@
                 "${workspaceFolder}/libs/Device/Nuvoton/NUC123/Include",
                 "${workspaceFolder}/libs/StdDriver/inc",
                 "${workspaceFolder}/libs/rtt",
+                "${workspaceFolder}/libs/minimalgraphics",
                 "${workspaceFolder}/src"
                 // "${workspaceFolder}/app"
             ],

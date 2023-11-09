@@ -1,0 +1,3 @@
+[submodule "libs/minimalgraphics"]
+	path = libs/minimalgraphics
+	url = git@github.com:mrf-r/minimalgraphics.git

@@ -1,6 +1,23 @@
-#include "monochrome_graphic_lib.h"
-#include "orca.h"
 #include "i2c_proc.h"
+#include "orca.h"
+
+#include "mgl.h"
+#include "mgl_font5_cut.h"
+#define MGL_DISPLAY_HEIGHT DISPLAY_SIZE_Y
+#define MGL_COLOR_LOW COLOR_OFF
+#define mgl_setworkingarea mgsWorkingArea
+#define mgl_fill mgdFill
+#define mgl_setcursor mgsCursorAbs
+// #define mgl_drawbmp(a,b,c) mgdBitmap(a,b,c)
+#define mgl_hexvalue16(a) mgdHex16(a, COLOR_ON)
+#define mgl_hexvalue32(a) mgdHex32(a, COLOR_ON)
+// extern const MglFont font5;
+#ifndef MGL_SINGLEDISPLAY
+extern const MglDisplay mgl_display;
+#endif
+
+// #include "monochrome_graphic_lib.h"
+// #define mgsFont(...)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +34,7 @@ void lcd_scan_tick__(uint32_t sr)
         mgl_setworkingarea(pos, 0, 1, MGL_DISPLAY_HEIGHT);
         mgl_fill(MGL_COLOR_LOW);
         mgl_setcursor(pos, 0x3FF - adc_pad[0]);
-        mgl_drawbmp(&bmp, 1, 1);
+        // mgl_drawbmp(&bmp, 1, 1);
 
         // lcd_update_line(sr);
     }
@@ -75,10 +92,15 @@ void lcd_scan_tick_(uint32_t sr)
     }
 }
 
-
 void lcd_scan_tick()
 // matrix scan
 {
+    mgsFont(&font5);
+
+#ifndef MGL_SINGLEDISPLAY
+    mgsDisplay(&mgl_display);
+#endif
+
     mgl_fill(MGL_COLOR_LOW);
 
     for (int i = 0; i < 8; i++) {
@@ -108,4 +130,3 @@ void lcd_scan_tick()
     mgl_hexvalue16(timeslot_max--);
     // lcd_update_line(sr);
 }
-
