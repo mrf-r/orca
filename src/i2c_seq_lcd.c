@@ -2,6 +2,7 @@
 // lcd update:
 // 128 * 8 bytes = 1024
 // 0.0256 s - 40 fps
+volatile uint8_t lcd_sync;
 
 int i2cMasterTransaction(I2CTransaction* wtr, I2CTransaction* rtr);
 
@@ -66,15 +67,27 @@ static I2CTransaction i2ct_lcd_update;
 extern uint8_t mgl_framebuffer[128 * 8];
 static uint8_t line;
 
+// step 3 - trigger graphics update after 8 lines
+static I2CTransaction* lcdUpdateCompleteCallback()
+{
+    ASSERT(i2ct_lcd_update.status & ITS_COMPLETE);
+    if (line == 0x7)
+        lcd_sync = lcd_sync + 1;
+    return 0;
+}
+
+// step 2 - update line
 static I2CTransaction* lcdUpdateDataCallback()
 {
     ASSERT(i2ct_lcd_update.status & ITS_COMPLETE);
     i2ct_lcd_update.status = 0;
     i2ct_lcd_update.len = 128;
     i2ct_lcd_update.data = &mgl_framebuffer[128 * line];
-    i2ct_lcd_update.complete_callback = 0;
+    i2ct_lcd_update.complete_callback = lcdUpdateCompleteCallback;
     return &i2ct_lcd_update;
 }
+
+// step 1:
 
 // to be called when bus is empty
 // returns true if transaction was initiated

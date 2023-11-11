@@ -5,7 +5,7 @@
 // #define MGL_ASSERT(...)
 #define MGL_ASSERT ASSERT
 
-// #define MGL_SINGLEDISPLAY
+#define MGL_SINGLEDISPLAY
 
 #define DISPLAY_SIZE_X 128
 #define DISPLAY_SIZE_Y 64

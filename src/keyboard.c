@@ -50,80 +50,123 @@ to keep all possible velocity levels
 #define KBD_START_VALUE (126 - KBD_MIN_VELO_TIMER)
 
 #if DEBUG == 1
-#include "system_dbgout.h"
+// #include "system_dbgout.h"
 uint8_t lastkey;
 uint8_t lastvelo;
 uint16_t kbd_rawvelo;
 uint16_t buttons;
 uint32_t keys_function;
-uint16_t buttons_finc_bmp = (1 << BUTTON_SHIFT);
+uint16_t buttons_func_bmp = (1 << BUTTON_SHIFT);
 #endif
 
 __attribute__((weak)) void keyPress(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
-    print_s(NEWLINE "key prs: ");
-    print_d8(key);
-    print_s(" ");
-    print_d8(velocity);
+    // print_s(NEWLINE "key prs: ");
+    // print_d8(key);
+    // print_s(" ");
+    // print_d8(velocity);
 }
 __attribute__((weak)) void keyRelease(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
-    print_s(NEWLINE "key rel: ");
-    print_d8(key);
-    print_s(" ");
-    print_d8(velocity);
+    // print_s(NEWLINE "key rel: ");
+    // print_d8(key);
+    // print_s(" ");
+    // print_d8(velocity);
 }
 __attribute__((weak)) void keyButton(uint8_t button, uint8_t press)
 {
     ASSERT(button < 16);
     if (press) {
         buttons |= 1 << button;
-        print_s(NEWLINE "but prs: ");
+        // print_s(NEWLINE "but prs: ");
     } else {
         buttons &= ~(1 << button);
-        print_s(NEWLINE "but rel: ");
+        // print_s(NEWLINE "but rel: ");
     }
-    print_d8(button);
+    // print_d8(button);
 }
 
 __attribute__((weak)) void keyFunc(uint8_t func, uint8_t press)
 {
     ASSERT(func < 25);
     if (press) {
-        print_s(NEWLINE "but prs: ");
+        // print_s(NEWLINE "but prs: ");
     } else {
-        print_s(NEWLINE "but rel: ");
+        // print_s(NEWLINE "but rel: ");
     }
-    print_d8(func);
+    // print_d8(func);
 }
 // TODO: unglobal
 
-#define CODEBLOCK_kbdnoteon(key)                                    \
-    {                                                               \
-        if (buttons & buttons_finc_bmp) {                           \
-            keys_function |= 1 << key;                              \
-            keyFunc(key, 1);                                        \
-        } else {                                                    \
-            int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
-            uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
-            keyPress(kbd_state[key].note, velocity);                \
-        }                                                           \
+static inline uint16_t clz(uint16_t v)
+{
+    const uint8_t lut[16] = { 16, 15, 14, 14, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12 };
+    if (v > 0xFF)
+        if (v > 0xFFF)
+            return lut[v >> 12] - 12;
+        else
+            return lut[v >> 8] - 8;
+    else if (v > 0xF)
+        return lut[v >> 4] - 4;
+    else
+        return lut[v];
+}
+
+uint16_t fastDiv(uint16_t u, uint16_t v)
+{
+    // Thank you SEGGER, you guys are really helping. Sorry for not using yor hw.
+    static const uint16_t recplut[128] = {
+        0xFFFF, 0xFE03, 0xFC0F, 0xFA23, 0xF83E, 0xF660, 0xF489, 0xF2B9,
+        0xF0F0, 0xEF2E, 0xED73, 0xEBBD, 0xEA0E, 0xE865, 0xE6C2, 0xE525,
+        0xE38E, 0xE1FC, 0xE070, 0xDEE9, 0xDD67, 0xDBEB, 0xDA74, 0xD901,
+        0xD794, 0xD62B, 0xD4C7, 0xD368, 0xD20D, 0xD0B6, 0xCF64, 0xCE16,
+        0xCCCC, 0xCB87, 0xCA45, 0xC907, 0xC7CE, 0xC698, 0xC565, 0xC437,
+        0xC30C, 0xC1E4, 0xC0C0, 0xBFA0, 0xBE82, 0xBD69, 0xBC52, 0xBB3E,
+        0xBA2E, 0xB921, 0xB817, 0xB70F, 0xB60B, 0xB509, 0xB40B, 0xB30F,
+        0xB216, 0xB11F, 0xB02C, 0xAF3A, 0xAE4C, 0xAD60, 0xAC76, 0xAB8F,
+        0xAAAA, 0xA9C8, 0xA8E8, 0xA80A, 0xA72F, 0xA655, 0xA57E, 0xA4A9,
+        0xA3D7, 0xA306, 0xA237, 0xA16B, 0xA0A0, 0x9FD8, 0x9F11, 0x9E4C,
+        0x9D89, 0x9CC8, 0x9C09, 0x9B4C, 0x9A90, 0x99D7, 0x991F, 0x9868,
+        0x97B4, 0x9701, 0x964F, 0x95A0, 0x94F2, 0x9445, 0x939A, 0x92F1,
+        0x9249, 0x91A2, 0x90FD, 0x905A, 0x8FB8, 0x8F17, 0x8E78, 0x8DDA,
+        0x8D3D, 0x8CA2, 0x8C08, 0x8B70, 0x8AD8, 0x8A42, 0x89AE, 0x891A,
+        0x8888, 0x87F7, 0x8767, 0x86D9, 0x864B, 0x85BF, 0x8534, 0x84A9,
+        0x8421, 0x8399, 0x8312, 0x828C, 0x8208, 0x8184, 0x8102, 0x8080
+    };
+    unsigned n = clz(v);
+    uint16_t r = recplut[(v << n >> 8) - 0x80];
+    uint32_t qx = (uint32_t)u * r;
+    uint16_t q = (uint16_t)(qx >> 16);
+    q = q >> (15 - n);
+    return q;
+}
+
+#define CODEBLOCK_kbdnoteon(key)                                            \
+    {                                                                       \
+        if (buttons & buttons_func_bmp) {                                   \
+            keys_function |= 1 << key;                                      \
+            keyFunc(key, 1);                                                \
+        } else {                                                            \
+            int32_t vrawv = fastDiv(KBD_REC_SCALE, kbd_state[key].counter); \
+            uint8_t velocity = vrawv > 127 ? 127 : vrawv;                   \
+            keyPress(kbd_state[key].note, velocity);                        \
+        }                                                                   \
     }
 
-#define CODEBLOCK_kbdnoteoff(key)                                   \
-    {                                                               \
-        if (keys_function & (1 << key)) {                           \
-            keys_function &= ~(1 << key);                           \
-            keyFunc(key, 0);                                        \
-        } else {                                                    \
-            int32_t vrawv = KBD_REC_SCALE / kbd_state[key].counter; \
-            uint8_t velocity = vrawv > 127 ? 127 : vrawv;           \
-            keyRelease(kbd_state[key].note, velocity);              \
-        }                                                           \
+#define CODEBLOCK_kbdnoteoff(key)                                           \
+    {                                                                       \
+        if (keys_function & (1 << key)) {                                   \
+            keys_function &= ~(1 << key);                                   \
+            keyFunc(key, 0);                                                \
+        } else {                                                            \
+            int32_t vrawv = fastDiv(KBD_REC_SCALE, kbd_state[key].counter); \
+            uint8_t velocity = vrawv > 127 ? 127 : vrawv;                   \
+            keyRelease(kbd_state[key].note, velocity);                      \
+        }                                                                   \
     }
 
 // set state

@@ -133,7 +133,7 @@ void i2cStart(uint8_t own_address)
 
 int i2cMasterTransaction(I2CTransaction* wtr, I2CTransaction* rtr)
 {
-    ASSERT((wtr && rtr) ? (wtr->address == (rtr->address & 1)) : true);
+    ASSERT((wtr && rtr) ? (wtr->address == (rtr->address - 1)) : true);
     int ret = I2C_BUSY;
     I2C_ATOMIC_START();
     // TODO return inside atomic
@@ -479,12 +479,18 @@ void I2C0_IRQHandler()
 {
     ASSERT(I2C0->I2CON & I2C_I2CON_SI)
     uint8_t status = I2C0->I2CSTATUS;
+    // leave IRQ and EN bits as is
+    uint32_t ctrl = I2C0->I2CON & 0xFFFFFFC3;
 #if DEBUG == 1
     static volatile uint32_t i2c_sta_flags = 0;
     i2c_sta_flags |= 1 << (status >> 3);
+    // print_s(NEWLINE "i2c status:");
+    // print_d8(status);
+    // print_s("   ctrl:");
+    // print_d8(ctrl);
+    // print_s("   cnt:");
+    // print_d32(counter_sr);
 #endif
-    // leave IRQ and EN bits as is
-    uint32_t ctrl = I2C0->I2CON & 0xFFFFFFC3;
     ctrl |= ista[status >> 3]();
     I2C0->I2CON = ctrl;
     i2c_last_event_time = I2C_TIME_GET();
@@ -497,7 +503,7 @@ void i2cVirtInterrupt()
         I2C0_IRQHandler();
         NVIC_ClearPendingIRQ(I2C0_IRQn);
     }
-    ASSERT(NVIC_GetPendingIRQ(I2C0_IRQn) == 0);
+    // ASSERT(NVIC_GetPendingIRQ(I2C0_IRQn) == 0);
 }
 #endif
 

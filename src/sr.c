@@ -3,7 +3,8 @@
 #include "keyboard.h"
 #include "orca.h"
 
-#define SR_TIMER_PERIOD (72000000 / SAMPLE_RATE)
+// #define SR_TIMER_PERIOD (72000000 / SAMPLE_RATE)
+#define SR_TIMER_PERIOD (144000000 / SAMPLE_RATE)
 
 volatile uint32_t counter_sr;
 static int32_t lcg;
@@ -12,7 +13,6 @@ void TMR0_IRQHandler()
 {
     // clear IRQ
     TIMER0->TISR = TIMER_TISR_TIF_Msk;
-
     counter_sr++;
     lcg = lcg * 0x41C64E6D + 0x3039;
     adcSrTap(counter_sr, lcg);
@@ -34,7 +34,7 @@ void timerSrStart()
     //
     TIMER0->TCSR = TIMER_TCSR_IE_Msk | (1 << TIMER_TCSR_MODE_Pos);
     // TIMER0->TCSR = 1 << TIMER_TCSR_MODE_Pos;
-    TIMER0->TCMPR = SR_TIMER_PERIOD - 1; // 750 - 96k 1500 - 48k
+    TIMER0->TCMPR = SR_TIMER_PERIOD; // 750 - 96k 1500 - 48k
     TIMER0->TCSR |= TIMER_TCSR_CEN_Msk;
     NVIC_SetPriority(TMR0_IRQn, IRQ_PRIORITY_TIMER_SR);
 #if IRQ_DISABLE == 0
@@ -51,7 +51,15 @@ void srVirtInterrupt()
     // ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn));
     if (NVIC_GetPendingIRQ(TMR0_IRQn)) {
         NVIC_ClearPendingIRQ(TMR0_IRQn);
+
+        uint32_t time_start = measurementTimerDelta();
+        
         TMR0_IRQHandler();
+
+        uint32_t time_end = measurementTimerDelta();
+        timeslot = time_end;
+        if (timeslot > timeslot_max)
+            timeslot_max = timeslot;
     }
     // for some reason it fails
     // ASSERT(NVIC_GetPendingIRQ(TMR0_IRQn) == 0);

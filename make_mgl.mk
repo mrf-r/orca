@@ -7,7 +7,7 @@ DIRS_INCLUDE_MGL := $(DIR_MGL) $(DIRS_INCLUDE_FW)
 
 #SOURCES_C_MGL := $(wildcard $(DIR_SRC_MGL)/*.c)
 SOURCES_C_MGL := $(DIR_SRC_MGL)/mgl.c
-SOURCES_C_MGL += $(DIR_SRC_MGL)/mgldisp_mono.c
+# SOURCES_C_MGL += $(DIR_SRC_MGL)/mgldisp_mono.c
 
 #######################################
 FLAGS_C_MGL := $(FLAGS_C_COMMON)

@@ -104,7 +104,7 @@ bool i2cSeqMidi()
     midi_transmit.data = (const uint8_t*)tx_buffer;
     midi_transmit.complete_callback = midiTxCallback;
     midi_receive.status = 0;
-    midi_receive.address = I2C_MIDI_REMOTE_ADDRESS;
+    midi_receive.address = I2C_MIDI_REMOTE_ADDRESS | 1;
     midi_receive.len = I2C_MIDI_BUFFER_SIZE * 4;
     midi_receive.data = (const uint8_t*)rx_buffer;
     midi_receive.complete_callback = midiRxCallback;

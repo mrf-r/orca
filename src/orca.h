@@ -124,6 +124,7 @@ typedef struct
     uint8_t red;
     uint8_t blue;
 } color_t;
+extern volatile uint8_t lcd_sync;
 
 void criticalLoop(void);
 void delayMs(uint32_t ms);

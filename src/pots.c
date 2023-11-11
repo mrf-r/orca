@@ -24,11 +24,11 @@ volatile int16_t adc_knob[8];
 volatile uint16_t adc_pad[16];
 
 // ADC is 0 to 0x3FF - need additional 4 bits
-#define SENSOR_CENTER 0x240
-#define SENSOR_SIZE 0x155
+#define SENSOR_CENTER (0x240L)
+#define SENSOR_SIZE (0x155L)
 #define SENSOR_ACTIVE_THRSH (SENSOR_CENTER - (0x400 - SENSOR_CENTER)) // 0x080
-#define SENSOR_FILTER 256
-#define SENSOR_RAND_PS ((int32_t)(0x100000000LL / (SENSOR_FILTER * 2)))
+#define SENSOR_FILTER (256L)
+#define SENSOR_RAND_PS ((int32_t)(0x100000000LL / SENSOR_FILTER / 2))
 
 #define PAD_THRSH (0x400 - 64)
 
@@ -41,14 +41,15 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
         sr = sr >> 2;
         // switch to next
         ASSERT((ADC->ADCR & ADC_ADCR_ADST_Msk) == 0);
-        
+
         PA->DOUT = (sr + 1) << 12;
 
+        int32_t dither = (int32_t)lcg / SENSOR_RAND_PS;
         int32_t pitch = (int16_t)ADC->ADDR[0];
         if (pitch < SENSOR_ACTIVE_THRSH)
             pitch = SENSOR_CENTER;
         static int32_t flt_pitchwheel = 0;
-        flt_pitchwheel += (pitch * SENSOR_FILTER - flt_pitchwheel + lcg / SENSOR_RAND_PS) / SENSOR_FILTER;
+        flt_pitchwheel += (pitch * SENSOR_FILTER - flt_pitchwheel + dither) / SENSOR_FILTER;
         pitch = (flt_pitchwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
         if (pitch < -0x1FFF)
             pitch = -0x1FFF;
@@ -60,7 +61,7 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
         int32_t mod = (int16_t)ADC->ADDR[1];
         if (mod > SENSOR_ACTIVE_THRSH) {
             static int32_t flt_modwheel = 0;
-            flt_modwheel += (mod * SENSOR_FILTER - flt_modwheel + lcg / SENSOR_RAND_PS) / SENSOR_FILTER;
+            flt_modwheel += (mod * SENSOR_FILTER - flt_modwheel + dither) / SENSOR_FILTER;
             mod = (flt_modwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
             if (mod < -0x1FFF)
                 mod = -0x1FFF;
@@ -73,7 +74,7 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
         uint32_t pos = sr & 0x7;
 
         adc_knob[pos] += (((int16_t)ADC->ADDR[3]) * 16 - adc_knob[pos] + lcg / 0x8000000) / 16;
-        ASSERT(adc_knob[pos] > 0);
+        ASSERT(adc_knob[pos] >= 0);
         ASSERT(adc_knob[pos] < 0x4000);
 
         adc_pad[pos] = ADC->ADDR[2];

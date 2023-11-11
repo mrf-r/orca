@@ -1,11 +1,13 @@
 
+#include "../obj/signature.h"
 #include "NUC123.h"
 #include "i2c_proc.h"
 #include "keyboard.h"
+#include "mgl.h"
+#include "mgl_font5_cut.h"
 #include "orca.h"
 #include "system_dbgout.h"
 #include "usb_midi.h"
-#include "../obj/signature.h"
 
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
@@ -56,16 +58,24 @@ static inline void mainLoop()
 
     // uint32_t lp = counter_sr & 0x7;
     static uint32_t next_upd = 0;
+    static uint32_t led_toggle = 0;
     if (counter_sr >= next_upd) {
-        static uint32_t led_toggle = 0;
         if (led_toggle) {
-            ledSet(18, rgb2c(0, 0, 0));
+            // ledSet(18, rgb2c(0, 0, 0));
             led_toggle = 0;
         } else {
-            ledSet(18, rgb2c(255, 0, 0));
+            // ledSet(18, rgb2c(255, 0, 0));
             led_toggle = 1;
         }
         next_upd += SAMPLE_RATE;
+    }
+    uint8_t led = counter_sr & 0x3F;
+    if (led < 26) {
+        uint32_t hue = counter_sr >> 13;
+        if (led == 19)
+            ledSet(led, hsv2c((uint8_t)(hue + led * 8), 255, led_toggle ? 96 : 192));
+        else
+            ledSet(led, hsv2c((uint8_t)(hue + led * 8), 255, 128));
     }
 
     // timeslot = timerSrGetValue();
@@ -76,15 +86,6 @@ static inline void mainLoop()
     // uint32_t lp = counter_sr & 0x7;
     // ledSet(lp, hsv2c(adc_knob[lp] / 4, adc_modwheel / 32, adc_pitchwheel / 32));
     // timerSrWainNext();
-
-    /*
-    for(uint32_t i = 0; i< 8; i++)
-    {
-            ledSet(i, hsv2c(hue + (i<<5),255,16));
-            ledSet(i+8, hsv2c(hue + (i<<5) + 16,255,16));
-            ledSet(i+16, hsv2c(25*i,255,16));
-    }
-    */
 }
 
 int main(void)
@@ -104,6 +105,10 @@ int main(void)
     kbdInit();
     // usbStart();
     lcdStart();
+#ifndef MGL_SINGLEDISPLAY
+    mgsDisplay(&mgl_display);
+#endif
+    mgsFont(&font5);
 
     for (uint32_t i = 0; i < 26; i++) {
         // ledSet(i, rgb2c(8, 8, 8));

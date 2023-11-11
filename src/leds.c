@@ -148,6 +148,7 @@ void ledInit()
 
 void ledSrTap(uint32_t tick, uint32_t lcg)
 {
+    // lcg = 0x80000000;
     // 64 cycles
     uint32_t p_pos = tick & 0x3F;
     // update pads - 48 bytes
