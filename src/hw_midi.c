@@ -1,7 +1,7 @@
 #include "NUC123.h"
 #include "orca.h"
 #define MIDI_BUFFER_SIZE 128
-uint8_t midi_buffer[MIDI_BUFFER_SIZE];
+uint8_t m_buffer[MIDI_BUFFER_SIZE];
 uint8_t midi_buffer_rp = 0;
 uint8_t midi_buffer_wp = 0;
 
@@ -33,7 +33,7 @@ void UART0_IRQHandler()
 {
     ASSERT(UART0->FSR & UART_FSR_TX_EMPTY_Msk);
     if (midi_buffer_rp != midi_buffer_wp) {
-        uartTxWrite(midi_buffer[midi_buffer_rp]);
+        uartTxWrite(m_buffer[midi_buffer_rp]);
         midi_buffer_rp = (midi_buffer_rp + 1) & (MIDI_BUFFER_SIZE - 1);
     } else {
         uartTxIrqDisable();
@@ -54,7 +54,7 @@ void uartVirtInterrupt()
 
 static inline void midi_write(uint8_t byte)
 {
-    midi_buffer[midi_buffer_wp] = byte;
+    m_buffer[midi_buffer_wp] = byte;
     midi_buffer_wp = (midi_buffer_wp + 1) & (MIDI_BUFFER_SIZE - 1);
 }
 

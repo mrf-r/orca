@@ -27,7 +27,7 @@ volatile uint16_t adc_pad[16];
 #define SENSOR_CENTER (0x240L)
 #define SENSOR_SIZE (0x155L)
 #define SENSOR_ACTIVE_THRSH (SENSOR_CENTER - (0x400 - SENSOR_CENTER)) // 0x080
-#define SENSOR_FILTER (256L)
+#define SENSOR_FILTER (512L)
 #define SENSOR_RAND_PS ((int32_t)(0x100000000LL / SENSOR_FILTER / 2))
 
 #define PAD_THRSH (0x400 - 64)
@@ -59,17 +59,18 @@ void adcSrTap(uint32_t sr, uint32_t lcg)
         adc_pitchwheel = pitch;
 
         int32_t mod = (int16_t)ADC->ADDR[1];
-        if (mod > SENSOR_ACTIVE_THRSH) {
-            static int32_t flt_modwheel = 0;
-            flt_modwheel += (mod * SENSOR_FILTER - flt_modwheel + dither) / SENSOR_FILTER;
-            mod = (flt_modwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
-            if (mod < -0x1FFF)
-                mod = -0x1FFF;
-            else if (mod > 0x2000)
-                mod = 0x2000;
-            mod = 0x2000 - mod;
-            adc_modwheel = mod;
+        if (mod < SENSOR_ACTIVE_THRSH) {
+            mod = 0x3ff; // max adc value
         }
+        static int32_t flt_modwheel = 0;
+        flt_modwheel += (mod * SENSOR_FILTER - flt_modwheel + dither) / SENSOR_FILTER;
+        mod = (flt_modwheel - (SENSOR_CENTER * SENSOR_FILTER)) * (0x2000 / SENSOR_SIZE) / SENSOR_FILTER;
+        if (mod < -0x1FFF)
+            mod = -0x1FFF;
+        else if (mod > 0x2000)
+            mod = 0x2000;
+        mod = 0x2000 - mod;
+        adc_modwheel = mod;
 
         uint32_t pos = sr & 0x7;
 

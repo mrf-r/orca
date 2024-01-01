@@ -8,6 +8,8 @@
                 "${workspaceFolder}/libs/StdDriver/inc",
                 "${workspaceFolder}/libs/rtt",
                 "${workspaceFolder}/libs/minimalgraphics",
+                "${workspaceFolder}/libs/mbwmidi",
+                "${workspaceFolder}/libs/mbwmidi/tests",
                 "${workspaceFolder}/src"
                 // "${workspaceFolder}/app"
             ],

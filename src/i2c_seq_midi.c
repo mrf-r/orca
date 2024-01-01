@@ -2,7 +2,7 @@
 #include "i2c_proc.h"
 
 int i2cMasterTransaction(I2CTransaction* wtr, I2CTransaction* rtr);
-__attribute__((weak)) void midiReceive(uint32_t timestamp, uint32_t message)
+__attribute__((weak)) void midiWrite(uint32_t timestamp, uint32_t message)
 {
     // TODO
     (void)timestamp;
@@ -52,7 +52,7 @@ static I2CTransaction* midiRxCallback()
     if (midi_receive.status == ITS_RESULT_OK) {
         for (unsigned i = 0; i < I2C_MIDI_BUFFER_SIZE; i++) {
             if (0 != rx_buffer[i]) {
-                midiReceive(counter_sr, rx_buffer[i]);
+                midiWrite(counter_sr, rx_buffer[i]);
             }
         }
         if (detached)

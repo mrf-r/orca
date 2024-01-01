@@ -4,10 +4,12 @@
 #include "i2c_proc.h"
 #include "keyboard.h"
 #include "mgl.h"
-#include "mgl_font5_cut.h"
+// #include "mgl_font5_cut.h"
 #include "orca.h"
 #include "system_dbgout.h"
 #include "usb_midi.h"
+
+extern const MglFont _5monotxt;
 
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
@@ -108,7 +110,8 @@ int main(void)
 #ifndef MGL_SINGLEDISPLAY
     mgsDisplay(&mgl_display);
 #endif
-    mgsFont(&font5);
+    // mgsFont(&font5);
+    mgsFont(&_5monotxt);
 
     for (uint32_t i = 0; i < 26; i++) {
         // ledSet(i, rgb2c(8, 8, 8));
