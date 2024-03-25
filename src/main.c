@@ -13,6 +13,7 @@ extern const MglFont _5monotxt;
 
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
+volatile unsigned atomic_level; // MIDI
 
 // basically all async MIDI processing
 void criticalLoop()
@@ -30,9 +31,8 @@ void criticalLoop()
     // async midi application functionality
     // TODO: main control loop is here
     i2cSeqTap();
-    // usbMainTap();
-    cc_write(adc_knob[0]);
-    // usbDubegLoopback();
+    usbMainTap();
+    // cc_write(adc_knob[0]);
 }
 
 void delayMs(uint32_t ms)

@@ -9,11 +9,12 @@ DIRS_INCLUDE_FW := $(DIR_SRC) $(DIRS_INCLUDE_HAL) $(DIRS_INCLUDE_CLI)
 #DIRS_INCLUDE_FW += app
 
 include make_mgl.mk
+include make_midi.mk
 
 DIRS_INCLUDE_FW += $(DIR_SRC_MGL)
+DIRS_INCLUDE_FW += $(DIR_SRC_MIDI)
 
 #######################################
-
 
 SOURCES_ASM_FW := $(wildcard $(DIR_SRC)/*$(EXT_ASM))
 SOURCES_C_FW := $(wildcard $(DIR_SRC)/*.c)
@@ -61,7 +62,7 @@ $(OBJECTS_FW): make_firmware.mk make_common.mk
 include $(wildcard $(DIR_OBJ_FW)/*.d)
 
 #######################################
-$(ELF_FW): $(OBJECTS_FW) $(OBJECTS_HAL) $(OBJECTS_CLI) $(OBJECTS_MGL)
+$(ELF_FW): $(OBJECTS_FW) $(OBJECTS_HAL) $(OBJECTS_CLI) $(OBJECTS_MGL) $(OBJECTS_MIDI)
 	@echo "FW elf: $(notdir $@)"
 	@$(CPP) $(FLAGS_LD_FW) $^ -o $@
 	@$(SZ) $@

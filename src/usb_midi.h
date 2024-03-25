@@ -13,14 +13,7 @@ extern const S_USBD_INFO_T usb_descriptors;
 
 void usbStart(void);
 void usbMainTap(void);
-uint32_t usbmidiOutSend(uint32_t message);
-uint32_t usbmidiInReceive(uint32_t* message);
 // void usbmidiEndpointsInit(void);
-
-#if DEBUG
-void usbDubegLoopback(void);
-void usbmidiOutCC(uint16_t control);
-#endif
 
 #if IRQ_DISABLE == 0
 void usbVirtInterrupt(void);

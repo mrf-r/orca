@@ -163,7 +163,7 @@ extern volatile int16_t adc_knob[8];
 extern volatile uint16_t adc_pad[16];
 
 // midi
-void cc_write(uint16_t cc); // TODO debug
+// void cc_write(uint16_t cc); // TODO debug
 void uartStart(void);
 
 // usb in usb_midi.h

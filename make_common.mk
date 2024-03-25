@@ -35,7 +35,7 @@ FLAGS_C_COMMON += -gdwarf-2 -fdata-sections -ffunction-sections
 FLAGS_C_COMMON += -MMD -MP
 FLAGS_C_COMMON += -ffast-math
 FLAGS_C_COMMON += -Os #-Ofast
-# FLAGS_C_COMMON += -flto\
+FLAGS_C_COMMON += -flto
 
 ifeq ($(DEBUG),1)
 FLAGS_C_COMMON += -g3
@@ -50,7 +50,7 @@ FLAGS_LD_COMMON += -specs=nano.specs -specs=nosys.specs
 #FLAGS_LD_COMMON += --cref # add cross reference to map file
 FLAGS_LD_COMMON += -Xlinker --gc-sections
 FLAGS_LD_COMMON += -Xlinker --print-memory-usage
-#FLAGS_LD_COMMON += -flto
+FLAGS_LD_COMMON += -flto
 
 #######################################
 $(DIR_OBJ):

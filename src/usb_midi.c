@@ -1,6 +1,10 @@
 #include "usb_midi.h"
 #include "orca.h"
 #include "system_dbgout.h"
+#include "midi_input.h"
+#include "midi_output.h"
+
+MidiOutPortContextT orca_usb_port;
 
 /*
 TODO:
@@ -9,7 +13,7 @@ TODO:
 - head tail pointers instead of positions???
 */
 
-#define USB_IRQ_DISABLE() __disable_irq()
+#define USB_IRQ_DISABLE() __disable_irq() // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #define USB_IRQ_ENABLE() __enable_irq()
 
 volatile unsigned counter_usbd_irq = 0;
@@ -54,47 +58,52 @@ void usbmidiEndpointsInit(void)
     USBD_SET_PAYLOAD_LEN(EP3, USB_MIDI_EP_IN_MAXPACKETSIZE);
 }
 
-#define UMI_BUF_SIZE 32
-static uint32_t umi_buf[UMI_BUF_SIZE];
-static uint32_t umi_wp = 0;
-static uint32_t umi_rp = 0;
-static uint32_t umi_ep_received = 0;
-
-#define UMO_BUF_SIZE 32
-static uint32_t umo_buf[UMO_BUF_SIZE];
-static uint32_t umo_wp = 0;
-static uint32_t umo_rp = 0;
-static uint32_t umo_ep_sent = 0;
 
 // check available buffer space and copy endpoint data or do nothing (wait)
+static uint8_t umi_ep_received = 0;
+static uint8_t umi_ep_rp = 0;
+
 static void usbmidiCopyInFromEp()
 {
-    if (((umi_rp - umi_wp - 1) & (UMI_BUF_SIZE - 1)) > umi_ep_received) {
-        // read from endpoint to input buffer
+    uint32_t ts = MIDI_GET_CLOCK();
+
+    while (umi_ep_received) {
+        // read one message and write it
         uint32_t* src = (uint32_t*)(USBD_BUF_BASE + EP2_BUF_BASE);
-        for (int i = 0; i < umi_ep_received; i++) {
-            // umi_buf[umi_wp] = src[i];
-            USBD_MemCopy((uint8_t*)&umi_buf[umi_wp], (uint8_t*)&src[i], 4);
-            umi_wp = (umi_wp + 1) & (UMI_BUF_SIZE - 1);
-            counter_usbd_received++;
+        MidiMessageT m;
+        USBD_MemCopy((uint8_t*)&m.full_word, (uint8_t*)(&src[umi_ep_rp]), 4);
+        m.cn = MIDI_CN_USB;
+        if (MIDI_RET_OK == midiTsWrite(m, ts)) {
+            umi_ep_rp++;
+            if (umi_ep_rp == umi_ep_received) {
+                umi_ep_rp = 0;
+                umi_ep_received = 0;
+                USBD_SET_PAYLOAD_LEN(2, USB_MIDI_EP_IN_MAXPACKETSIZE);
+            }
+            counter_usbd_received++; // TODO: diag
+        } else {
+            return;
         }
-        // prepare for next data reception
-        umi_ep_received = 0;
-        USBD_SET_PAYLOAD_LEN(2, USB_MIDI_EP_IN_MAXPACKETSIZE);
-    } // else do nothing, keep ep ram untouched
+    }
 }
+
+
+static uint32_t umo_ep_sent = 0;
 
 static void usbmidiCopyOutToEp()
 {
     uint32_t* dst = (uint32_t*)(USBD_BUF_BASE + EP3_BUF_BASE);
     umo_ep_sent = 0;
-    while ((umo_rp != umo_wp)
-        && (umo_ep_sent < (USB_MIDI_EP_OUT_MAXPACKETSIZE / 4))) {
-        // dst[umo_ep_sent] = umo_buf[umo_rp];
-        USBD_MemCopy((uint8_t*)&dst[umo_ep_sent], (uint8_t*)&umo_buf[umo_rp], 4);
-        umo_rp = (umo_rp + 1) & (UMO_BUF_SIZE - 1);
-        umo_ep_sent++;
-        counter_usbd_transmitted++;
+
+    while (umo_ep_sent < (USB_MIDI_EP_OUT_MAXPACKETSIZE / 4)) {
+        MidiMessageT m;
+        if (MIDI_RET_OK == midiPortReadNext(&orca_usb_port, &m)) {
+            USBD_MemCopy((uint8_t*)(&dst[umo_ep_sent]), (uint8_t*)&m.full_word, 4);
+            umo_ep_sent++;
+            counter_usbd_transmitted++; // TODO: diag
+        } else {
+            break;
+        }
     }
     // validate EP
     if (umo_ep_sent)
@@ -208,53 +217,6 @@ void USBD_IRQHandler(void)
     }
 }
 
-// static void usbmidiClassRequest(void)
-// {
-//     /* Setup error, stall the device */
-//     USBD_SetStall(EP0);
-//     USBD_SetStall(EP1);
-// }
-
-uint32_t usbmidiOutGetFree()
-{
-    uint32_t ret = (umo_rp - umo_wp - 1) & (UMO_BUF_SIZE - 1);
-    return ret;
-}
-uint32_t usbmidiOutSend(uint32_t message)
-{
-    uint32_t ret = 0;
-    USB_IRQ_DISABLE();
-    if (((umo_rp - umo_wp - 1) & (UMO_BUF_SIZE - 1)) > 1) {
-        umo_buf[umo_wp] = message;
-        umo_wp = (umo_wp + 1) & (UMO_BUF_SIZE - 1);
-        ret = 1;
-    }
-    USB_IRQ_ENABLE();
-    return ret;
-}
-
-uint32_t usbmidiInReceive(uint32_t* message)
-{
-    uint32_t ret = 0;
-    if (umi_rp != umi_wp) {
-        *message = umi_buf[umi_rp];
-        umi_rp = (umi_rp + 1) & (UMI_BUF_SIZE - 1);
-        ret = 1;
-    }
-    return ret;
-}
-void usbmidiOutCC(uint16_t control)
-{
-    USB_IRQ_DISABLE();
-    if (((umo_rp - umo_wp - 1) & (UMO_BUF_SIZE - 1)) > UMO_BUF_SIZE / 2) {
-        umo_buf[umo_wp] = 0x00B01000 | (control >> 7);
-        umo_wp = (umo_wp + 1) & (UMO_BUF_SIZE - 1);
-        umo_buf[umo_wp] = 0x00B03000 | (control & 0x7F);
-        umo_wp = (umo_wp + 1) & (UMO_BUF_SIZE - 1);
-    }
-    USB_IRQ_ENABLE();
-}
-
 #if IRQ_DISABLE == 1
 void usbVirtInterrupt()
 {
@@ -275,37 +237,19 @@ void usbVirtInterrupt()
 }
 #endif
 
-void usbDubegLoopback()
-{
-    // debug loopback - one message per iteration??
-    static uint8_t not_empty = 0;
-    static uint32_t m;
-    do {
-        if (not_empty) {
-            if (usbmidiOutSend(m))
-                not_empty = 0;
-            else
-                return;
-        } else {
-            not_empty = usbmidiInReceive(&m);
-        }
-    } while (not_empty);
-
-    // copy_another:
-    //     if (umi_rp != umi_wp) {
-    //         if (usbmidiOutSend(umi_buf[umi_rp]) == 0) {
-    //             umi_rp = (umi_rp + 1) & (UMI_BUF_SIZE - 1);
-    //             goto copy_another;
-    //         }
-    //     }
-}
 
 void usbMainTap()
 {
     USB_IRQ_DISABLE();
+    // this function covers cases where a receive or transmit
+    // buffer run out occurred during usb irq handler
+    // in that case we need to retry write and continue
+    // transmission by re-enabling ep
     if (umi_ep_received) {
         usbmidiCopyInFromEp();
     }
+    // this function covers cases when at the time the
+    // handler was called there was no data to transfer
     if (umo_ep_sent == 0) {
         usbmidiCopyOutToEp();
     }
@@ -314,6 +258,8 @@ void usbMainTap()
 
 void usbStart()
 {
+    midiPortInit(&orca_usb_port);
+
     USBD_Open(&usb_descriptors, NULL, NULL);
     usbmidiEndpointsInit();
     USBD_Start();
