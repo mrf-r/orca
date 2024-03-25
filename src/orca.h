@@ -1,7 +1,6 @@
 #ifndef ORCA_H_
 #define ORCA_H_
 
-#include "i2c.h"
 #include <stdint.h>
 
 #if DEBUG == 1

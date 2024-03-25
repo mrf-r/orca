@@ -4,10 +4,12 @@
 // TEMPLATE
 
 #include <orca.h>
+#include "NUC123.h"
 #define MIDI_ASSERT ASSERT
 
 typedef enum {
-    MIDI_CN_LOCALPANEL = 0,
+    MIDI_CN_CONTROL = 0,
+    MIDI_CN_LOCAL,
     MIDI_CN_USB,
 } MidiCnEn;
 

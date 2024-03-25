@@ -1,8 +1,7 @@
 #include "usb_midi.h"
 #include "orca.h"
+#include "mbwmidi.h"
 #include "system_dbgout.h"
-#include "midi_input.h"
-#include "midi_output.h"
 
 MidiOutPortContextT orca_usb_port;
 
@@ -98,6 +97,7 @@ static void usbmidiCopyOutToEp()
     while (umo_ep_sent < (USB_MIDI_EP_OUT_MAXPACKETSIZE / 4)) {
         MidiMessageT m;
         if (MIDI_RET_OK == midiPortReadNext(&orca_usb_port, &m)) {
+            m.cn = 0;
             USBD_MemCopy((uint8_t*)(&dst[umo_ep_sent]), (uint8_t*)&m.full_word, 4);
             umo_ep_sent++;
             counter_usbd_transmitted++; // TODO: diag

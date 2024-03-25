@@ -1,7 +1,6 @@
 #include "NUC123.h"
 #include "orca.h"
-#include "midi_output.h"
-#include "midi_uart.h"
+#include "mbwmidi.h"
 
 // #define MIDI_BUFFER_SIZE 128
 // uint8_t m_buffer[MIDI_BUFFER_SIZE];

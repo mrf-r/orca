@@ -2,6 +2,7 @@
 
 #include "keyboard.h"
 #include "orca.h"
+#include "mbwmidi.h"
 
 #define TOTAL_ROWS 10
 
@@ -63,6 +64,14 @@ __attribute__((weak)) void keyPress(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
+    MidiMessageT m = {
+        .cn = MIDI_CN_LOCAL,
+        .cin = MIDI_CIN_NOTEON,
+        .miditype = MIDI_CIN_NOTEON,
+        .byte2 = key,
+        .byte3 = velocity
+    };
+    midiNonSysexWrite(m);
     // print_s(NEWLINE "key prs: ");
     // print_d8(key);
     // print_s(" ");
@@ -72,6 +81,14 @@ __attribute__((weak)) void keyRelease(uint8_t key, uint8_t velocity)
 {
     lastkey = key;
     lastvelo = velocity;
+    MidiMessageT m = {
+        .cn = MIDI_CN_LOCAL,
+        .cin = MIDI_CIN_NOTEOFF,
+        .miditype = MIDI_CIN_NOTEOFF,
+        .byte2 = key,
+        .byte3 = velocity
+    };
+    midiNonSysexWrite(m);
     // print_s(NEWLINE "key rel: ");
     // print_d8(key);
     // print_s(" ");
@@ -88,6 +105,14 @@ __attribute__((weak)) void keyButton(uint8_t button, uint8_t press)
         // print_s(NEWLINE "but rel: ");
     }
     // print_d8(button);
+    MidiMessageT m = {
+        .cn = MIDI_CN_CONTROL,
+        .cin = MIDI_CIN_NOTEON,
+        .miditype = MIDI_CIN_NOTEON,
+        .byte2 = button,
+        .byte3 = press
+    };
+    midiNonSysexWrite(m);
 }
 
 __attribute__((weak)) void keyFunc(uint8_t func, uint8_t press)
@@ -99,6 +124,14 @@ __attribute__((weak)) void keyFunc(uint8_t func, uint8_t press)
         // print_s(NEWLINE "but rel: ");
     }
     // print_d8(func);
+    MidiMessageT m = {
+        .cn = MIDI_CN_CONTROL,
+        .cin = MIDI_CIN_NOTEON,
+        .miditype = MIDI_CIN_NOTEON,
+        .byte2 = func + 64,
+        .byte3 = press
+    };
+    midiNonSysexWrite(m);
 }
 // TODO: unglobal
 

@@ -1,6 +1,5 @@
 
 #include "../obj/signature.h"
-#include "NUC123.h"
 #include "i2c_proc.h"
 #include "keyboard.h"
 #include "mgl.h"
@@ -8,8 +7,12 @@
 #include "orca.h"
 #include "system_dbgout.h"
 #include "usb_midi.h"
+#include "mbwmidi.h"
 
 extern const MglFont _5monotxt;
+
+extern MidiOutPortContextT orca_usb_port;
+extern MidiOutPortContextT orca_uart_port;
 
 volatile uint32_t timeslot;
 volatile uint32_t timeslot_max;
@@ -32,6 +35,14 @@ void criticalLoop()
     // TODO: main control loop is here
     i2cSeqTap();
     usbMainTap();
+
+    MidiTsMessageT mt;
+    if (MIDI_RET_OK == midiRead(&mt)) {
+        // we will not check
+        // TODO: we need to limit usb input stream
+        midiPortWriteRaw(&orca_usb_port, mt.mes);
+        midiPortWriteRaw(&orca_uart_port, mt.mes);
+    }
     // cc_write(adc_knob[0]);
 }
 
@@ -97,6 +108,7 @@ int main(void)
     print_s(NEWLINE ENV_DATE_LOCAL);
     print_s(NEWLINE ENV_TIME_LOCAL);
     // ASSERT(0); // test assert
+    midiInit();
 
     measurementTimerStart();
     timerSrStart();
